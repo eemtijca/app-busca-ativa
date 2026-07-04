@@ -1,11 +1,12 @@
 # Aplicação de Busca Ativa Escolar
 
-Repositório inicial da aplicação de comunicação em tempo real entre escola e família, concebida para o combate à evasão escolar no Ensino Médio de Tempo Integral. Projeto em fase de desenvolvimento para o Ceará Científico 2026.
+Repositório inicial da aplicação de comunicação em tempo real entre escola e família, concebida para o combate à evasão escolar no Ensino Médio de Tempo Integral. Projeto em fase inicial de desenvolvimento.
 
 ## Índice
 
 - [Sobre o Projeto](#sobre-o-projeto)
 - [Status do Projeto](#status-do-projeto)
+- [Arquitetura (Commit #1)](#arquitetura-commit-1)
 - [Proposta de Valor](#proposta-de-valor)
 - [Funcionalidades Previstas](#funcionalidades-previstas)
 - [Tecnologias Definidas](#tecnologias-definidas)
@@ -20,7 +21,38 @@ A Aplicação de Busca Ativa Escolar é uma proposta de solução tecnológica d
 
 ## Status do Projeto
 
-Fase de Arquitetura e Scaffold inicial. O projeto encontra-se em seus primeiros commits, estabelecendo a estrutura de pastas, configurações do repositório e o planejamento das funcionalidades que serão construídas ao longo do ano.
+Fundação da arquitetura concluída. O projeto possui a estrutura de diretórios modular (Clean/DDD inspired), roteamento básico para os três perfis de usuário, integração com Supabase via cliente exportado, e barra de acessibilidade global (TTS, alto contraste e ajuste de fonte).
+
+## Arquitetura
+
+```
+src/
+├── application/            # Composables e lógica de apresentação
+│   └── useAcessibilidade.ts
+├── domain/                 # Interfaces e tipos do domínio
+│   └── index.ts
+├── infrastructure/         # Integrações externas (Supabase)
+│   └── supabase.ts
+└── presentation/           # Camada de UI
+    ├── components/         # Componentes compartilhados (futuro)
+    ├── layouts/
+    │   └── LayoutPrincipal.vue
+    ├── router/
+    │   └── index.ts
+    └── views/
+        ├── LoginView.vue
+        ├── ProfessorHomeView.vue
+        ├── GestaoHomeView.vue
+        └── ResponsavelHomeView.vue
+```
+
+### Funcionalidades implementadas
+
+- **Text-to-Speech (TTS):** Leitura do conteúdo da tela utilizando a Web Speech API (`window.speechSynthesis`) com idioma pt-BR.
+- **Alto Contraste:** Alternância do atributo `data-bs-theme` no elemento `<html>` para escurecer a interface (mecanismo nativo do Bootstrap 5.3+).
+- **Ajuste de Fonte:** Aumento e diminuição do tamanho base da fonte no `<html>` (escala em rem), com limites entre 14px e 24px.
+- **Roteamento:** Quatro rotas configuradas (`/`, `/professor`, `/gestao`, `/responsavel`) com layout compartilhado contendo a barra de acessibilidade.
+- **Supabase:** Cliente inicializado e exportado a partir das variáveis de ambiente `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`, pronto para uso futuro.
 
 ## Proposta de Valor
 
@@ -63,8 +95,6 @@ Este projeto está sendo arquitetado com foco em agilidade, escalabilidade e man
 - **GitHub Codespaces & Live Share:** Ambientes de desenvolvimento colaborativo na nuvem que serão utilizados pelos estudantes.
 
 ## Como Executar o Projeto
-
-Aviso: Como este é o repositório inicial (scaffold), a base de código principal ainda será implementada. As instruções abaixo representam o fluxo de trabalho projetado para a execução local assim que o desenvolvimento estiver em andamento.
 
 ### Pré-requisitos
 Certifique-se de ter o [Node.js](https://nodejs.org/) instalado em seu ambiente local.
@@ -114,7 +144,7 @@ As regras de proteção já estão ativas a partir deste primeiro commit. A bran
 
 ## Equipe
 
-Projeto em concepção e desenvolvimento colaborativo por estudantes e educadores da EEMTI José Cláudio de Araújo.
+Projeto em concepção e desenvolvimento colaborativo por estudantes e educadores da unidade escolar.
 
 **Desenvolvimento:**
 
