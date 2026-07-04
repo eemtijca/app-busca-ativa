@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAcessibilidade } from '@/application/useAcessibilidade'
+import { useAcessibilidade } from '@/composables/useAcessibilidade'
 
 const { lerTexto, alternarContraste, aumentarFonte, diminuirFonte } = useAcessibilidade()
 

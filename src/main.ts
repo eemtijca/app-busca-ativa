@@ -3,7 +3,7 @@ import 'bootstrap'
 
 import { createApp } from 'vue'
 import App from './App.vue'
-import router from './presentation/router'
+import router from './rotas'
 
 const app = createApp(App)
 

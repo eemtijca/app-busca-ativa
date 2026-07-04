@@ -6,7 +6,7 @@ Repositório inicial da aplicação de comunicação em tempo real entre escola 
 
 - [Sobre o Projeto](#sobre-o-projeto)
 - [Status do Projeto](#status-do-projeto)
-- [Arquitetura (Commit #1)](#arquitetura-commit-1)
+- [Arquitetura](#arquitetura)
 - [Proposta de Valor](#proposta-de-valor)
 - [Funcionalidades Previstas](#funcionalidades-previstas)
 - [Tecnologias Definidas](#tecnologias-definidas)
@@ -21,29 +21,37 @@ A Aplicação de Busca Ativa Escolar é uma proposta de solução tecnológica d
 
 ## Status do Projeto
 
-Fundação da arquitetura concluída. O projeto possui a estrutura de diretórios modular (Clean/DDD inspired), roteamento básico para os três perfis de usuário, integração com Supabase via cliente exportado, e barra de acessibilidade global (TTS, alto contraste e ajuste de fonte).
+Infraestrutura de banco de dados, autenticação e proteção de rotas concluída. O projeto possui modelo de dados no PostgreSQL (gerenciado via Supabase) com cinco tabelas, políticas de segurança RLS por perfil, composable de autenticação, guardas de rota com RBAC, e barra de acessibilidade global (TTS, alto contraste e ajuste de fonte).
 
 ## Arquitetura
 
 ```
 src/
-├── application/            # Composables e lógica de apresentação
-│   └── useAcessibilidade.ts
-├── domain/                 # Interfaces e tipos do domínio
+├── componentes/            # Componentes compartilhados (futuro)
+├── composables/            # Lógica de apresentação reutilizável
+│   ├── useAcessibilidade.ts
+│   └── useAutenticacao.ts
+├── layouts/                # Layouts da aplicação
+│   └── LayoutPrincipal.vue
+├── paginas/                # Páginas/views da aplicação
+│   ├── LoginView.vue
+│   ├── ProfessorHomeView.vue
+│   ├── GestaoHomeView.vue
+│   └── ResponsavelHomeView.vue
+├── rotas/                  # Configuração de roteamento
 │   └── index.ts
-├── infrastructure/         # Integrações externas (Supabase)
+├── servicos/               # Integrações externas
 │   └── supabase.ts
-└── presentation/           # Camada de UI
-    ├── components/         # Componentes compartilhados (futuro)
-    ├── layouts/
-    │   └── LayoutPrincipal.vue
-    ├── router/
-    │   └── index.ts
-    └── views/
-        ├── LoginView.vue
-        ├── ProfessorHomeView.vue
-        ├── GestaoHomeView.vue
-        └── ResponsavelHomeView.vue
+├── tipos/                  # Interfaces e tipos do domínio
+│   ├── database.ts
+│   └── index.ts
+├── App.vue
+└── main.ts
+
+supabase/
+├── config.toml             # Configuração local do Supabase
+└── migrations/
+    └── 0001_schema_inicial.sql  # Schema do banco + RLS
 ```
 
 ### Funcionalidades implementadas
@@ -51,8 +59,10 @@ src/
 - **Text-to-Speech (TTS):** Leitura do conteúdo da tela utilizando a Web Speech API (`window.speechSynthesis`) com idioma pt-BR.
 - **Alto Contraste:** Alternância do atributo `data-bs-theme` no elemento `<html>` para escurecer a interface (mecanismo nativo do Bootstrap 5.3+).
 - **Ajuste de Fonte:** Aumento e diminuição do tamanho base da fonte no `<html>` (escala em rem), com limites entre 14px e 24px.
-- **Roteamento:** Quatro rotas configuradas (`/`, `/professor`, `/gestao`, `/responsavel`) com layout compartilhado contendo a barra de acessibilidade.
-- **Supabase:** Cliente inicializado e exportado a partir das variáveis de ambiente `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`, pronto para uso futuro.
+- **Modelo de Dados:** Cinco tabelas no PostgreSQL (`perfis`, `alunos`, `vinculos_responsaveis`, `frequencias`, `ocorrencias`) com gatilho automático de criação de perfil via `auth.users`.
+- **Row Level Security (RLS):** Políticas de segurança por linha em todas as tabelas — cada perfil (professor, gestão, responsável) enxerga apenas os dados que lhe compete.
+- **Autenticação:** Composable `useAutenticacao.ts` com funções de login, logout, verificação de sessão e carregamento de perfil via Supabase Auth.
+- **Proteção de Rotas:** Guardas de navegação no Vue Router que redirecionam usuários não autenticados para o login e aplicam RBAC — cada perfil só acessa suas rotas permitidas, com redirecionamento automático pós-login.
 
 ## Proposta de Valor
 
