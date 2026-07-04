@@ -6,6 +6,19 @@
 -- ============================================================
 
 -- ----------------------------
+-- 1. Tabela: perfis
+-- Vinculada 1:1 ao auth.users
+-- ----------------------------
+create table public.perfis (
+  id         uuid        primary key references auth.users(id) on delete cascade,
+  nome       text        not null,
+  papel      text        not null check (papel in ('professor', 'gestao', 'responsavel')),
+  email      text,
+  telefone   text,
+  created_at timestamptz not null default now()
+);
+
+-- ----------------------------
 -- Função auxiliar: verifica se o usuário autenticado pertence a um papel
 -- SECURITY DEFINER para evitar recursão infinita no RLS
 -- ----------------------------
@@ -20,19 +33,6 @@ as $$
     where id = auth.uid() and papel = papel_esperado
   );
 $$;
-
--- ----------------------------
--- 1. Tabela: perfis
--- Vinculada 1:1 ao auth.users
--- ----------------------------
-create table public.perfis (
-  id         uuid        primary key references auth.users(id) on delete cascade,
-  nome       text        not null,
-  papel      text        not null check (papel in ('professor', 'gestao', 'responsavel')),
-  email      text,
-  telefone   text,
-  created_at timestamptz not null default now()
-);
 
 -- ----------------------------
 -- Trigger: criar perfil automaticamente ao cadastrar em auth.users
