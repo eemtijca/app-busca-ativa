@@ -23,27 +23,27 @@
  *   via FAB no canto inferior direito, sempre visível.
  */
 
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAutenticacao } from '@/composables/useAutenticacao'
-import { useAcessibilidade } from '@/composables/useAcessibilidade'
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAutenticacao } from '@/composables/useAutenticacao';
+import { useAcessibilidade } from '@/composables/useAcessibilidade';
 
-const router = useRouter()
+const router = useRouter();
 
-const { usuario, logout } = useAutenticacao()
+const { usuario, logout } = useAutenticacao();
 
-const { lerTexto, alternarContraste, aumentarFonte, diminuirFonte } = useAcessibilidade()
+const { lerTexto, alternarContraste, aumentarFonte, diminuirFonte } = useAcessibilidade();
 
-const estaLogado = computed(() => !!usuario.value)
+const estaLogado = computed(() => !!usuario.value);
 
 function lerTela(): void {
-  const texto = document.body.innerText
-  lerTexto(texto)
+  const texto = document.body.innerText;
+  lerTexto(texto);
 }
 
 async function handleLogout(): Promise<void> {
-  await logout()
-  await router.push('/')
+  await logout();
+  await router.push('/');
 }
 </script>
 

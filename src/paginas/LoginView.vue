@@ -23,33 +23,33 @@
  *   - Erros são traduzidos para não expor detalhes técnicos.
  */
 
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAutenticacao } from '@/composables/useAutenticacao'
-import { useAcessibilidade } from '@/composables/useAcessibilidade'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAutenticacao } from '@/composables/useAutenticacao';
+import { useAcessibilidade } from '@/composables/useAcessibilidade';
 
 // Instância do Vue Router para navegação explícita pós-login
-const router = useRouter()
+const router = useRouter();
 
 // Composable de autenticação: fornece login(), usuario (reativo) e logout()
-const { usuario, login } = useAutenticacao()
+const { usuario, login } = useAutenticacao();
 
 // Composable de acessibilidade: usado para ler mensagens de erro em voz alta (TTS)
-const { lerTexto } = useAcessibilidade()
+const { lerTexto } = useAcessibilidade();
 
 // ---- Estado reativo do formulário ----
 
 /** Email digitado pelo usuário */
-const email = ref('')
+const email = ref('');
 
 /** Senha digitada pelo usuário */
-const senha = ref('')
+const senha = ref('');
 
 /** Controla o estado de carregamento durante a requisição ao Supabase */
-const carregando = ref(false)
+const carregando = ref(false);
 
 /** Mensagem de erro amigável exibida no alerta (null = sem erro) */
-const erro = ref<string | null>(null)
+const erro = ref<string | null>(null);
 
 /**
  * Mapeamento de papéis para rotas absolutas.
@@ -59,7 +59,7 @@ const homePorPapel: Record<string, string> = {
   professor: '/professor',
   gestao: '/gestao',
   responsavel: '/responsavel',
-}
+};
 
 /**
  * traduzirErro - Converte erros retornados pelo Supabase Auth
@@ -75,23 +75,23 @@ const homePorPapel: Record<string, string> = {
 function traduzirErro(erroDesconhecido: unknown): string {
   // Extrai a mensagem textual do erro, independente do formato
   const mensagemOriginal =
-    erroDesconhecido instanceof Error ? erroDesconhecido.message : String(erroDesconhecido)
+    erroDesconhecido instanceof Error ? erroDesconhecido.message : String(erroDesconhecido);
 
   // Mapeamento de padrões conhecidos do Supabase Auth para pt-BR
   if (mensagemOriginal.includes('Invalid login credentials')) {
-    return 'Email ou senha incorretos.'
+    return 'Email ou senha incorretos.';
   }
 
   if (mensagemOriginal.includes('Email not confirmed')) {
-    return 'Email ainda não confirmado. Verifique sua caixa de entrada.'
+    return 'Email ainda não confirmado. Verifique sua caixa de entrada.';
   }
 
   if (mensagemOriginal.includes('Too many requests')) {
-    return 'Muitas tentativas seguidas. Aguarde um momento e tente novamente.'
+    return 'Muitas tentativas seguidas. Aguarde um momento e tente novamente.';
   }
 
   if (mensagemOriginal.includes('Auth session missing')) {
-    return 'Sessão expirada. Faça login novamente.'
+    return 'Sessão expirada. Faça login novamente.';
   }
 
   // Erros de rede (ex: servidor offline, CORS, timeout)
@@ -100,11 +100,11 @@ function traduzirErro(erroDesconhecido: unknown): string {
     mensagemOriginal.includes('TypeError') ||
     mensagemOriginal.includes('Failed to fetch')
   ) {
-    return 'Erro de conexão com o servidor. Verifique sua internet e tente novamente.'
+    return 'Erro de conexão com o servidor. Verifique sua internet e tente novamente.';
   }
 
   // Qualquer erro não mapeado: mensagem genérica
-  return 'Ocorreu um erro inesperado. Tente novamente.'
+  return 'Ocorreu um erro inesperado. Tente novamente.';
 }
 
 /**
@@ -124,37 +124,37 @@ async function handleLogin(): Promise<void> {
   // ---- Validação local (evita requisição desnecessária) ----
 
   if (!email.value.trim() || !senha.value.trim()) {
-    erro.value = 'Preencha o email e a senha para continuar.'
-    return
+    erro.value = 'Preencha o email e a senha para continuar.';
+    return;
   }
 
   // ---- Início da requisição ----
 
-  carregando.value = true
-  erro.value = null
+  carregando.value = true;
+  erro.value = null;
 
   try {
-    await login(email.value.trim(), senha.value)
+    await login(email.value.trim(), senha.value);
 
     // Após login bem-sucedido, o perfil do usuário foi carregado
     // em usuario.value (vide carregarPerfil dentro do composable).
-    const papel = usuario.value?.papel
+    const papel = usuario.value?.papel;
 
     if (papel && homePorPapel[papel]) {
       // Redirecionamento EXPLÍCITO baseado no papel do usuário
-      await router.push(homePorPapel[papel])
+      await router.push(homePorPapel[papel]);
     } else {
       // Caso o perfil não tenha papel definido (fallback de segurança)
-      erro.value = 'Perfil não identificado. Contate a gestão escolar.'
+      erro.value = 'Perfil não identificado. Contate a gestão escolar.';
     }
   } catch (erroDesconhecido: unknown) {
     // Traduz o erro técnico para mensagem amigável ao usuário
-    erro.value = traduzirErro(erroDesconhecido)
+    erro.value = traduzirErro(erroDesconhecido);
 
     // Aciona o TTS (leitura da tela) para acessibilidade
-    lerTexto(erro.value)
+    lerTexto(erro.value);
   } finally {
-    carregando.value = false
+    carregando.value = false;
   }
 }
 </script>

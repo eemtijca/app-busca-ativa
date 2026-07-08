@@ -1,10 +1,10 @@
-import { ref, type Ref } from 'vue'
+import { ref, type Ref } from 'vue';
 
-const FONTE_MIN = 14
-const FONTE_MAX = 24
-const FONTE_PADRAO = 16
+const FONTE_MIN = 14;
+const FONTE_MAX = 24;
+const FONTE_PADRAO = 16;
 
-const tamanhoFonte: Ref<number> = ref(FONTE_PADRAO)
+const tamanhoFonte: Ref<number> = ref(FONTE_PADRAO);
 
 export function useAcessibilidade() {
   /**
@@ -12,17 +12,17 @@ export function useAcessibilidade() {
    * sobreposição de áudio no TTS (Web Speech API).
    */
   function lerTexto(texto: string): void {
-    if (!window.speechSynthesis) return
+    if (!window.speechSynthesis) return;
 
-    window.speechSynthesis.cancel()
+    window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(texto)
-    utterance.lang = 'pt-BR'
-    utterance.rate = 1
-    utterance.pitch = 1
-    utterance.volume = 1
+    const utterance = new SpeechSynthesisUtterance(texto);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.volume = 1;
 
-    window.speechSynthesis.speak(utterance)
+    window.speechSynthesis.speak(utterance);
   }
 
   /**
@@ -31,9 +31,9 @@ export function useAcessibilidade() {
    * para alternância de temas claro/escuro.
    */
   function alternarContraste(): void {
-    const html = document.documentElement
-    const temaAtual = html.getAttribute('data-bs-theme')
-    html.setAttribute('data-bs-theme', temaAtual === 'dark' ? 'light' : 'dark')
+    const html = document.documentElement;
+    const temaAtual = html.getAttribute('data-bs-theme');
+    html.setAttribute('data-bs-theme', temaAtual === 'dark' ? 'light' : 'dark');
   }
 
   /**
@@ -42,15 +42,15 @@ export function useAcessibilidade() {
    * sem necessidade de recalcular breakpoints ou paddings.
    */
   function aumentarFonte(): void {
-    const novo = Math.min(tamanhoFonte.value + 2, FONTE_MAX)
-    tamanhoFonte.value = novo
-    document.documentElement.style.fontSize = `${novo}px`
+    const novo = Math.min(tamanhoFonte.value + 2, FONTE_MAX);
+    tamanhoFonte.value = novo;
+    document.documentElement.style.fontSize = `${novo}px`;
   }
 
   function diminuirFonte(): void {
-    const novo = Math.max(tamanhoFonte.value - 2, FONTE_MIN)
-    tamanhoFonte.value = novo
-    document.documentElement.style.fontSize = `${novo}px`
+    const novo = Math.max(tamanhoFonte.value - 2, FONTE_MIN);
+    tamanhoFonte.value = novo;
+    document.documentElement.style.fontSize = `${novo}px`;
   }
 
   return {
@@ -59,5 +59,5 @@ export function useAcessibilidade() {
     alternarContraste,
     aumentarFonte,
     diminuirFonte,
-  }
+  };
 }

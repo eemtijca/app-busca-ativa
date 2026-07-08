@@ -1,4 +1,4 @@
-export type { PerfilUsuario } from './database'
+export type { PerfilUsuario } from './database';
 export type {
   PapelUsuario,
   StatusFrequencia,
@@ -10,4 +10,4 @@ export type {
   Frequencia,
   Ocorrencia,
   Database,
-} from './database'
+} from './database';

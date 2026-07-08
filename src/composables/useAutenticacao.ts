@@ -30,19 +30,19 @@
  *   - Listener não expõe dados sensíveis
  */
 
-import { ref, type Ref } from 'vue'
-import { supabaseClient, decodificarToken } from '@/servicos/supabase'
-import type { Perfil, PapelUsuario } from '@/tipos/database'
+import { ref, type Ref } from 'vue';
+import { supabaseClient, decodificarToken } from '@/servicos/supabase';
+import type { Perfil, PapelUsuario } from '@/tipos/database';
 
 // ================================================================
 // Estado compartilhado - escopo de módulo
 // ================================================================
 
 /** Perfil do usuário autenticado (null = não autenticado) */
-const usuario: Ref<Perfil | null> = ref(null)
+const usuario: Ref<Perfil | null> = ref(null);
 
 /** Indica se a sessão já foi verificada (true = carregando) */
-const carregando: Ref<boolean> = ref(true)
+const carregando: Ref<boolean> = ref(true);
 
 // ================================================================
 // Função de fallback - escopo de módulo para uso no listener
@@ -58,21 +58,21 @@ const carregando: Ref<boolean> = ref(true)
 async function carregarPerfil() {
   const {
     data: { session },
-  } = await supabaseClient.auth.getSession()
+  } = await supabaseClient.auth.getSession();
 
   if (!session) {
-    usuario.value = null
-    return
+    usuario.value = null;
+    return;
   }
 
   const { data } = await supabaseClient
     .from('perfis')
     .select('*')
     .eq('id', session.user.id)
-    .single()
+    .single();
 
   if (data) {
-    usuario.value = data as unknown as Perfil
+    usuario.value = data as unknown as Perfil;
   }
 }
 
@@ -95,7 +95,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
     if (session?.access_token) {
       // Tenta extrair claims do JWT (via Custom Access Token Hook)
-      const claims = decodificarToken(session.access_token)
+      const claims = decodificarToken(session.access_token);
 
       if (claims?.papel && claims?.nome) {
         // JWT com claims customizadas - preenche sem consultar banco
@@ -106,18 +106,18 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
           email: claims.email ?? null,
           telefone: null,
           created_at: '',
-        }
+        };
       } else {
         // Fallback: token antigo sem claims - consulta banco
-        carregarPerfil()
+        carregarPerfil();
       }
     }
-    carregando.value = false
+    carregando.value = false;
   } else if (event === 'SIGNED_OUT') {
-    usuario.value = null
-    carregando.value = false
+    usuario.value = null;
+    carregando.value = false;
   }
-})
+});
 
 // ================================================================
 // Funções públicas do composable
@@ -136,17 +136,17 @@ export function useAutenticacao() {
     const { data, error } = await supabaseClient.auth.signInWithPassword({
       email,
       password: senha,
-    })
+    });
 
-    if (error) throw error
+    if (error) throw error;
 
     // Aguarda um tick para o listener onAuthStateChange preencher usuario
     // Caso o JWT seja antigo (sem claims), chama fallback
     if (!usuario.value) {
-      await carregarPerfil()
+      await carregarPerfil();
     }
 
-    return data
+    return data;
   }
 
   /**
@@ -156,8 +156,8 @@ export function useAutenticacao() {
    * O listener onAuthStateChange dispara SIGNED_OUT.
    */
   async function logout() {
-    await supabaseClient.auth.signOut({ scope: 'local' })
-    usuario.value = null
+    await supabaseClient.auth.signOut({ scope: 'local' });
+    usuario.value = null;
   }
 
   /**
@@ -169,7 +169,7 @@ export function useAutenticacao() {
    * @returns true se usuario.value está preenchido
    */
   async function verificarSessao(): Promise<boolean> {
-    return !!usuario.value
+    return !!usuario.value;
   }
 
   return {
@@ -179,5 +179,5 @@ export function useAutenticacao() {
     logout,
     verificarSessao,
     carregarPerfil,
-  }
+  };
 }
