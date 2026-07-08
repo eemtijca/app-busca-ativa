@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { supabaseClient } from '@/servicos/supabase'
+import { supabaseClient, decodificarToken } from '@/servicos/supabase'
 import LayoutPrincipal from '@/layouts/LayoutPrincipal.vue'
 import LoginView from '@/paginas/LoginView.vue'
 import ProfessorHomeView from '@/paginas/ProfessorHomeView.vue'
@@ -24,28 +24,40 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      name: 'login',
+      meta: { requerAutenticacao: false },
+      component: LoginView,
+    },
+    {
+      path: '/professor',
       component: LayoutPrincipal,
       children: [
         {
           path: '',
-          name: 'login',
-          meta: { requerAutenticacao: false },
-          component: LoginView,
-        },
-        {
-          path: 'professor',
           name: 'professor',
           meta: { requerAutenticacao: true, papeisPermitidos: ['professor'] },
           component: ProfessorHomeView,
         },
+      ],
+    },
+    {
+      path: '/gestao',
+      component: LayoutPrincipal,
+      children: [
         {
-          path: 'gestao',
+          path: '',
           name: 'gestao',
           meta: { requerAutenticacao: true, papeisPermitidos: ['gestao'] },
           component: GestaoHomeView,
         },
+      ],
+    },
+    {
+      path: '/responsavel',
+      component: LayoutPrincipal,
+      children: [
         {
-          path: 'responsavel',
+          path: '',
           name: 'responsavel',
           meta: { requerAutenticacao: true, papeisPermitidos: ['responsavel'] },
           component: ResponsavelHomeView,
@@ -63,13 +75,10 @@ router.beforeEach(async (to, _from) => {
   let perfilPapel: string | null = null
 
   if (session) {
-    const { data: perfil } = await supabaseClient
-      .from('perfis')
-      .select('papel')
-      .eq('id', session.user.id)
-      .single()
-
-    perfilPapel = perfil?.papel ?? null
+    // Lê o papel DIRETAMENTE do JWT via jwt-decode
+    // sem consultar o banco de dados (Custom Access Token Hook)
+    const claims = decodificarToken(session.access_token)
+    perfilPapel = (claims?.papel as string) ?? null
   }
 
   if (session && to.path === '/') {
