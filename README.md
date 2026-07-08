@@ -132,7 +132,7 @@ npm install
 
 ```env
 VITE_SUPABASE_URL=sua_url_do_supabase
-VITE_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
+VITE_SUPABASE_PUBLISHABLE_KEY=sua_chave_publicavel_do_supabase
 ```
 
 5. Execute o servidor de desenvolvimento:
