@@ -1,17 +1,4 @@
 <script setup lang="ts">
-/**
- * ListaOcorrencias - Lista de ocorrências graves e suspensões
- * da Central de Ocorrências Graves da gestão.
- *
- * É um componente DUMB: recebe a lista via props e emite ações.
- *
- * API:
- *   - ocorrencias: OcorrenciaGrave[]
- *   - @bloquear-retorno: emite ao acionar o toggle "Exige presença do responsável"
- *   - @ver-anexo: emite ao clicar em "Ver documento"
- *   - @registrar-suspensao: emite ao clicar em "Formalizar suspensão"
- */
-
 import type { OcorrenciaGrave } from '@/tipos/componentes';
 
 defineProps<{

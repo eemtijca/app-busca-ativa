@@ -1,19 +1,4 @@
 <script setup lang="ts">
-/**
- * FormularioJustificativa - Formulário mobile-friendly para o
- * responsável anexar foto de atestado médico ou comprovante e
- * enviar para a secretaria.
- *
- * É um componente DUMB: gerencia apenas o estado local do
- * formulário e emite o evento "enviar" com os dados consolidados.
- *
- * API:
- *   - alunoNome?: string — nome do aluno relacionado (opcional, informativo)
- *   - alunoTurma?: string — turma do aluno (opcional, informativo)
- *   - enviando: boolean — desabilita o botão durante o envio
- *   - @enviar: emite { motivo, dataAusencia, arquivo }
- */
-
 import { ref, computed } from 'vue';
 
 withDefaults(
@@ -84,7 +69,6 @@ function submeter() {
     dataAusencia: dataAusencia.value,
     arquivo: arquivo.value,
   });
-  // Limpa o formulário após envio bem-sucedido
   motivo.value = '';
   dataAusencia.value = '';
   limparArquivo();

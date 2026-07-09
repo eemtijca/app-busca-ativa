@@ -1,21 +1,4 @@
 <script setup lang="ts">
-/**
- * ChatHorarioProtegido - Canal de diálogo entre responsável e
- * coordenação, com proteção de horário (fora do horário escolar
- * o envio de mensagens é desativado e um aviso é exibido).
- *
- * É um componente DUMB: recebe as mensagens e o estado de horário
- * via props. A página inteligente é responsável por calcular
- * "horarioAtivo" e por enviar/ascender as mensagens via Supabase.
- *
- * API:
- *   - mensagens: MensagemChat[]
- *   - horarioAtivo: boolean — false desativa o envio e mostra aviso
- *   - mensagemForaHorario: string — texto exibido quando bloqueado
- *   - enviando: boolean
- *   - @enviar-mensagem: emite o texto digitado
- */
-
 import { ref, nextTick, watch } from 'vue';
 import type { MensagemChat } from '@/tipos/componentes';
 
@@ -86,10 +69,6 @@ function submeter() {
       </div>
     </div>
 
-    <!--
-      Área de mensagens. role="log" garante anúncio de novas
-      mensagens por leitores de tela.
-    -->
     <div
       ref="contenedorMensagens"
       class="card-body overflow-auto p-3 bg-body"
@@ -138,10 +117,6 @@ function submeter() {
       </div>
     </div>
 
-    <!--
-      Aviso de horário protegido. Quando o horário não está ativo,
-      o campo é desativado e o aviso é exibido em amarelo.
-    -->
     <div
       v-if="!horarioAtivo && mensagemForaHorario"
       class="alert alert-warning rounded-0 mb-0 py-2"

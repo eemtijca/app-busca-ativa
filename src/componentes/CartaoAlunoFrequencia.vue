@@ -1,20 +1,4 @@
 <script setup lang="ts">
-/**
- * CartaoAlunoFrequencia - Cartão de um aluno na tela de
- * Registro de Frequência por Exceção do professor.
- *
- * Princípio: o sistema assume PRESENÇA por padrão. O professor
- * marca AUSÊNCIA com um toque. O cartão reflete visualmente o
- * estado e dispara o emit "alternar" ao ser clicado.
- *
- * É um componente DUMB: recebe o aluno e o estado via props.
- *
- * API:
- *   - aluno: AlunoFrequencia
- *   - @alternar: emitido ao clicar no botão de ausência
- *   - @registrar-ausencia-periodo: emitido ao clicar em "Ausência em aula"
- */
-
 import { computed } from 'vue';
 import type { AlunoFrequencia } from '@/tipos/componentes';
 
@@ -39,7 +23,6 @@ const inicialAluno = computed(() =>
 <template>
   <div class="card shadow-sm" :class="classesCartao">
     <div class="card-body d-flex align-items-center gap-3 p-3">
-      <!-- Avatar com inicial -->
       <span
         class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0 fw-semibold"
         :class="aluno.ausente ? 'bg-danger text-white' : 'bg-success text-white'"
@@ -49,7 +32,6 @@ const inicialAluno = computed(() =>
         {{ inicialAluno }}
       </span>
 
-      <!-- Identificação do aluno -->
       <div class="min-w-0 flex-grow-1">
         <div class="fw-semibold text-truncate">{{ aluno.nome }}</div>
         <div class="text-body-secondary small text-truncate">
@@ -63,7 +45,6 @@ const inicialAluno = computed(() =>
         </div>
       </div>
 
-      <!-- Botão principal de alternar presença/ausência -->
       <button
         type="button"
         class="btn flex-shrink-0"
@@ -83,7 +64,6 @@ const inicialAluno = computed(() =>
       </button>
     </div>
 
-    <!-- Ação secundária: registrar ausência em aula específica -->
     <div class="card-footer bg-transparent border-top-0 pt-0 pb-3 px-3">
       <button
         type="button"

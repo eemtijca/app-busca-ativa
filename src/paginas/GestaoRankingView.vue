@@ -5,7 +5,6 @@ import { useAcessibilidade } from '@/composables/useAcessibilidade';
 import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
 import { supabaseClient } from '@/servicos/supabase';
 import CartaoAlunoRisco from '@/componentes/CartaoAlunoRisco.vue';
-import ModalBase from '@/componentes/ModalBase.vue';
 import type { AlunoRisco } from '@/tipos/componentes';
 
 const router = useRouter();
@@ -15,9 +14,6 @@ const { buscarRankingRisco, carregando } = useBuscaAtiva();
 const ranking = ref<AlunoRisco[]>([]);
 const filtroRisco = ref<'todos' | 'alto' | 'medio' | 'baixo'>('todos');
 const buscaAluno = ref('');
-
-const modalAlunoAberto = ref(false);
-const alunoDetalhe = ref<AlunoRisco | null>(null);
 
 const rankingFiltrado = computed(() => {
   let lista = ranking.value;
@@ -39,14 +35,6 @@ const rankingFiltrado = computed(() => {
 const totalRiscoAlto = computed(() => ranking.value.filter((r) => r.nivel === 'alto').length);
 const totalRiscoMedio = computed(() => ranking.value.filter((r) => r.nivel === 'medio').length);
 const totalRiscoBaixo = computed(() => ranking.value.filter((r) => r.nivel === 'baixo').length);
-
-function verDetalhesAluno(alunoId: string) {
-  const aluno = ranking.value.find((a) => a.id === alunoId);
-  if (aluno) {
-    alunoDetalhe.value = aluno;
-    modalAlunoAberto.value = true;
-  }
-}
 
 function contatarFamilia(alunoId: string) {
   const aluno = ranking.value.find((a) => a.id === alunoId);
@@ -174,45 +162,7 @@ onMounted(async () => {
         :key="aluno.id"
         :aluno="aluno"
         @contatar="contatarFamilia"
-        @ver-detalhes="verDetalhesAluno"
       />
     </div>
-
-    <ModalBase
-      v-model="modalAlunoAberto"
-      variante="padrao"
-      tamanho="lg"
-      titulo="Detalhes do aluno"
-      fechar-label="Fechar"
-    >
-      <div v-if="alunoDetalhe">
-        <h3 class="h5 mb-1">{{ alunoDetalhe.nome }}</h3>
-        <p class="text-body-secondary small mb-3">
-          <span v-if="alunoDetalhe.turma">{{ alunoDetalhe.turma }} · </span>
-          Matrícula {{ alunoDetalhe.matricula }}
-        </p>
-        <div class="row g-3 mb-3">
-          <div class="col-6">
-            <div class="card border-0 bg-body-tertiary h-100">
-              <div class="card-body text-center">
-                <div class="fs-4 fw-bold text-danger">{{ alunoDetalhe.totalAusencias }}</div>
-                <div class="text-body-secondary small">Faltas registradas</div>
-              </div>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="card border-0 bg-body-tertiary h-100">
-              <div class="card-body text-center">
-                <div class="fs-4 fw-bold text-warning">{{ alunoDetalhe.totalOcorrencias }}</div>
-                <div class="text-body-secondary small">Ocorrências graves</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <p class="text-body-secondary small mb-0">
-          Última ausência: {{ alunoDetalhe.ultimaAusencia || 'Sem registro' }}
-        </p>
-      </div>
-    </ModalBase>
   </div>
 </template>

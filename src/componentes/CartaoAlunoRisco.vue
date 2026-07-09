@@ -1,17 +1,4 @@
 <script setup lang="ts">
-/**
- * CartaoAlunoRisco - Linha/cartão de aluno no Ranking de
- * Priorização de Risco da gestão.
- *
- * É um componente DUMB: recebe o aluno com nível de risco
- * calculado e dispara emits para ações da gestão.
- *
- * API:
- *   - aluno: AlunoRisco
- *   - @contatar: emitido ao clicar em "Contatar família"
- *   - @ver-detalhes: emitido ao clicar no nome do aluno
- */
-
 import { computed } from 'vue';
 import type { AlunoRisco, NivelRisco } from '@/tipos/componentes';
 
@@ -57,7 +44,6 @@ const inicialAluno = computed(() =>
   <div class="card shadow-sm" :class="classeBorda">
     <div class="card-body p-3">
       <div class="d-flex align-items-center gap-3">
-        <!-- Avatar -->
         <span
           class="d-inline-flex align-items-center justify-content-center rounded-circle bg-body-secondary fw-semibold flex-shrink-0"
           style="width: 44px; height: 44px"
@@ -66,7 +52,6 @@ const inicialAluno = computed(() =>
           {{ inicialAluno }}
         </span>
 
-        <!-- Identificação -->
         <div class="min-w-0 flex-grow-1">
           <button
             type="button"
@@ -98,7 +83,6 @@ const inicialAluno = computed(() =>
           </div>
         </div>
 
-        <!-- Ação primária -->
         <button
           type="button"
           class="btn btn-sm flex-shrink-0"

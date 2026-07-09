@@ -5,7 +5,6 @@ import { useAutenticacao } from '@/composables/useAutenticacao';
 import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
 import { supabaseClient } from '@/servicos/supabase';
 import CartaoAlertaResponsavel from '@/componentes/CartaoAlertaResponsavel.vue';
-import ModalBase from '@/componentes/ModalBase.vue';
 import type { AlertaResponsavel } from '@/tipos/componentes';
 
 const router = useRouter();
@@ -13,23 +12,8 @@ const { usuario } = useAutenticacao();
 const { buscarAlertasResponsavel } = useBuscaAtiva();
 
 const alertas = ref<AlertaResponsavel[]>([]);
-const modalAlertaAberto = ref(false);
-const alertaSelecionado = ref<AlertaResponsavel | null>(null);
 
-function verDetalhesAlerta(alertaId: string) {
-  const a = alertas.value.find((x) => x.id === alertaId);
-  if (a) {
-    alertaSelecionado.value = a;
-    modalAlertaAberto.value = true;
-  }
-}
-
-function abrirModalJustificativa(alertaId?: string) {
-  if (alertaId) {
-    const a = alertas.value.find((x) => x.id === alertaId);
-    if (a) {
-    }
-  }
+function abrirJustificativa(alertaId?: string) {
   router.push('/responsavel/justificativa');
 }
 
@@ -71,32 +55,8 @@ onMounted(async () => {
 
     <div v-else class="row g-3">
       <div v-for="alerta in alertas" :key="alerta.id" class="col-12 col-md-6">
-        <CartaoAlertaResponsavel
-          :alerta="alerta"
-          @ver-detalhes="verDetalhesAlerta"
-          @enviar-justificativa="abrirModalJustificativa"
-        />
+        <CartaoAlertaResponsavel :alerta="alerta" @enviar-justificativa="abrirJustificativa" />
       </div>
     </div>
-
-    <ModalBase
-      v-model="modalAlertaAberto"
-      variante="padrao"
-      tamanho="md"
-      titulo="Detalhes do alerta"
-      fechar-label="Fechar"
-    >
-      <div v-if="alertaSelecionado">
-        <h3 class="h5 mb-2">{{ alertaSelecionado.titulo }}</h3>
-        <p class="text-body-secondary small mb-3">
-          <i class="bi bi-calendar me-1" aria-hidden="true"></i>{{ alertaSelecionado.data }}
-          <span v-if="alertaSelecionado.periodo">
-            · <i class="bi bi-clock me-1" aria-hidden="true"></i
-            >{{ alertaSelecionado.periodo }}</span
-          >
-        </p>
-        <p>{{ alertaSelecionado.descricao }}</p>
-      </div>
-    </ModalBase>
   </div>
 </template>

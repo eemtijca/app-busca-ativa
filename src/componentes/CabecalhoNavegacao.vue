@@ -1,33 +1,4 @@
 <script setup lang="ts">
-/**
- * CabecalhoNavegacao - Cabeçalho de navegação contextual da aplicação.
- *
- * Modelado a partir dos exemplos "navbar-fixed" e "dashboard" do
- * Bootstrap 5.3. Nenhuma variante legada foi removida — todas as cinco
- * originais (simples, centralizado, autenticacao, escuro, avatar)
- * permanecem para uso em telas internas. Foi adicionada a variante
- * 'dashboard', projetada para o LayoutPrincipal e estritamente
- * utilitária (sem botões inúteis).
- *
- * Variante 'dashboard':
- *   - Botão hamburger (sempre visível em < lg) que abre o offcanvas
- *     da BarraLateral via atributo data-bs-toggle="offcanvas".
- *   - Título da página (prop tituloPagina) com subtítulo opcional.
- *   - Slot #acoes: botões contextuais (ex.: "Registrar Falta").
- *   - Slot #usuario: menu do usuário (avatar + dropdown de sair).
- *   - Botão de acessibilidade rápida (atalho para o offcanvas
- *     de acessibilidade global do LayoutPrincipal).
- *
- * API:
- *   - variante, itens, marca, nomeUsuario, avatarSrc, itensDropdown,
- *     placeholderPesquisa, rotuloEntrar, rotuloCadastrar,
- *     pesquisaAriaLabel (variantes legadas)
- *   - tituloPagina?: string — título exibido na barra (variante dashboard)
- *   - subtituloPagina?: string — subtítulo opcional
- *   - alvoOffcanvas?: string — id do offcanvas da BarraLateral (default 'barraLateralOffcanvas')
- *   - alvoAcessibilidade?: string — id do offcanvas de acessibilidade (default 'offcanvasAcessibilidade')
- */
-
 import { computed } from 'vue';
 import type { LinkNav, DropdownItem } from '@/tipos/componentes';
 
@@ -142,7 +113,6 @@ const linkClasse = computed(() => {
     </div>
   </header>
 
-  <!-- Variantes legadas preservadas -->
   <header v-else-if="variante === 'escuro'" :class="classesHeader">
     <div class="container">
       <div

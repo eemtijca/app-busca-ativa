@@ -1,17 +1,4 @@
 <script setup lang="ts">
-/**
- * FilaJustificativas - Fila de justificativas enviadas pelos
- * responsáveis e pendentes de validação pela gestão.
- *
- * É um componente DUMB: recebe a lista via props e emite ações.
- *
- * API:
- *   - justificativas: JustificativaPendente[]
- *   - @aceitar: emite ao clicar em "Aceitar"
- *   - @recusar: emite ao clicar em "Recusar"
- *   - @ver-anexo: emite ao clicar em "Ver anexo"
- */
-
 import type { JustificativaPendente } from '@/tipos/componentes';
 
 defineProps<{

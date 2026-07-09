@@ -1,17 +1,4 @@
 <script setup lang="ts">
-/**
- * TermometroRisco - Termômetro de Atenção Visual do responsável.
- *
- * Indicador colorido (verde / amarelo / vermelho) que mostra ao
- * responsável o nível de risco do seu filho, sem termos técnicos.
- *
- * É um componente DUMB: recebe o nível e as contagens via props.
- *
- * API:
- *   - termometro: TermometroAtencao (nivel, alunoNome, alunoTurma,
- *                 totalAusencias, totalOcorrencias, mensagem)
- */
-
 import { computed } from 'vue';
 import type { TermometroAtencao, NivelRisco } from '@/tipos/componentes';
 
@@ -101,7 +88,6 @@ const porcentagem = computed(() => {
         </div>
       </div>
 
-      <!-- Barra visual do termômetro -->
       <div class="mb-2">
         <div class="d-flex justify-content-between small mb-1">
           <span>Estável</span>

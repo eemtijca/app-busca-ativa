@@ -1,16 +1,3 @@
-/**
- * tipos/componentes.ts
- *
- * Tipos compartilhados entre os componentes presentacionais (dumb) e as
- * páginas inteligentes (smart) da Aplicação de Busca Ativa Escolar.
- *
- * Convenção PT-BR: todos os nomes são em português do Brasil.
- */
-
-// =========================================================
-// Navegação e Layout
-// =========================================================
-
 export interface LinkNav {
   rotulo: string;
   url: string;
@@ -43,10 +30,6 @@ export interface DropdownItem {
   dividir?: boolean;
   icone?: string;
 }
-
-// =========================================================
-// Hero, Recursos e Conteúdo Genérico
-// =========================================================
 
 export interface AcaoHero {
   rotulo: string;
@@ -116,10 +99,6 @@ export type VarianteBadge =
   | 'avatar'
   | 'removivel'
   | 'avatar-removivel';
-
-// =========================================================
-// Domínio: Alunos, Frequência, Ocorrências e Risco
-// =========================================================
 
 /**
  * Nível de risco calculado a partir do acúmulo de ausências
@@ -220,10 +199,6 @@ export interface EstatisticaPainel {
   variante: CorBadge;
   rodape?: string;
 }
-
-// =========================================================
-// Domínio: Responsável (Pais)
-// =========================================================
 
 /**
  * Alerta exibido no painel do responsável.

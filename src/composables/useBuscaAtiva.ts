@@ -1,19 +1,3 @@
-/**
- * useBuscaAtiva.ts - Composable de acesso a dados do domínio
- * da Busca Ativa Escolar.
- *
- * Função:
- *   Centraliza as consultas e mutações no Supabase usadas pelas
- *   páginas inteligentes (HomeViews). Cada função retorna dados
- *   tipados e trata erros de forma amigável (PT-BR).
- *
- * Princípios:
- *   - Sem dados mockados: se a tabela estiver vazia, retorna [].
- *   - Erros são logados no console e propagados como mensagens.
- *   - Tipagem estrita com base em src/tipos/database.ts.
- *   - Nomes 100% em PT-BR.
- */
-
 import { ref, type Ref } from 'vue';
 import { supabaseClient } from '@/servicos/supabase';
 import type { Aluno, Frequencia, Ocorrencia, Perfil, VinculoResponsavel } from '@/tipos/database';
@@ -30,10 +14,6 @@ import type {
   HorarioProtegido,
 } from '@/tipos/componentes';
 
-// =========================================================
-// Utilitários internos
-// =========================================================
-
 /**
  * Calcula o nível de risco com base em ausências e ocorrências.
  * Regras de negócio (alinhadas ao README):
@@ -47,9 +27,6 @@ function calcularNivelRisco(totalAusencias: number, totalOcorrencias: number): N
   return 'baixo';
 }
 
-/**
- * Formata uma string de data ISO para exibição amigável PT-BR.
- */
 function formatarData(iso: string): string {
   if (!iso) return '';
   try {
@@ -64,9 +41,6 @@ function formatarData(iso: string): string {
   }
 }
 
-/**
- * Formata um timestamp ISO para data + horário separados.
- */
 function formatarDataHorario(iso: string): { data: string; horario: string } {
   if (!iso) return { data: '', horario: '' };
   try {
@@ -84,18 +58,9 @@ function formatarDataHorario(iso: string): { data: string; horario: string } {
   }
 }
 
-// =========================================================
-// API pública do composable
-// =========================================================
-
 export function useBuscaAtiva() {
-  // ---- Estado de carregamento e erro compartilhados ----
   const carregando: Ref<boolean> = ref(false);
   const erro: Ref<string | null> = ref(null);
-
-  // =========================================================
-  // PROFESSOR
-  // =========================================================
 
   /**
    * buscarAlunosParaFrequencia - Busca a lista de alunos para o
@@ -133,16 +98,6 @@ export function useBuscaAtiva() {
     }
   }
 
-  /**
-   * registrarFrequenciaEmMassa - Persiste as frequências marcadas
-   * pelo professor. Cria um registro de ausência apenas para os
-   * alunos marcados (registro por exceção).
-   *
-   * @param alunos - Lista de alunos com estado de ausência
-   * @param professorId - ID do professor autenticado
-   * @param dataAula - Data da aula (YYYY-MM-DD)
-   * @param periodo - Período da aula (ex.: "Manhã", "1º Horário")
-   */
   async function registrarFrequenciaEmMassa(
     alunos: AlunoFrequencia[],
     professorId: string,
@@ -183,10 +138,6 @@ export function useBuscaAtiva() {
     }
   }
 
-  /**
-   * registrarAusenciaEmPeriodo - Registra ausência de um aluno
-   * em um período específico de aula (controle de ausência na aula).
-   */
   async function registrarAusenciaEmPeriodo(
     alunoId: string,
     professorId: string,
@@ -219,11 +170,6 @@ export function useBuscaAtiva() {
     }
   }
 
-  /**
-   * registrarOcorrenciaGrave - Cria uma ocorrência de comportamento
-   * extremo (grave ou suspensão) para um aluno. A descrição é
-   * obrigatória e deve ser objetiva.
-   */
   async function registrarOcorrenciaGrave(
     alunoId: string,
     professorId: string,
@@ -257,14 +203,6 @@ export function useBuscaAtiva() {
     }
   }
 
-  // =========================================================
-  // GESTÃO
-  // =========================================================
-
-  /**
-   * buscarRankingRisco - Calcula o ranking de priorização de
-   * risco de TODOS os alunos. Cruza frequências + ocorrências.
-   */
   async function buscarRankingRisco(): Promise<AlunoRisco[]> {
     carregando.value = true;
     erro.value = null;
@@ -297,7 +235,6 @@ export function useBuscaAtiva() {
         'aluno_id' | 'exige_presenca_responsavel'
       >[];
 
-      // Agrega por aluno
       const ranking: AlunoRisco[] = alunos.map((aluno) => {
         const ausencias = frequencias.filter((f) => f.aluno_id === aluno.id);
         const ocos = ocorrencias.filter((o) => o.aluno_id === aluno.id);
@@ -340,10 +277,6 @@ export function useBuscaAtiva() {
     }
   }
 
-  /**
-   * buscarOcorrenciasGraves - Lista todas as ocorrências graves
-   * e suspensões para a Central de Ocorrências Graves da gestão.
-   */
   async function buscarOcorrenciasGraves(): Promise<OcorrenciaGrave[]> {
     carregando.value = true;
     erro.value = null;
@@ -357,7 +290,6 @@ export function useBuscaAtiva() {
       if (err) throw err;
       const ocorrencias = (ocoData ?? []) as unknown as Ocorrencia[];
 
-      // Busca alunos relacionados
       const alunoIds = [...new Set(ocorrencias.map((o) => o.aluno_id))];
       const { data: alunosData } = await supabaseClient
         .from('alunos')
@@ -365,7 +297,6 @@ export function useBuscaAtiva() {
         .in('id', alunoIds);
       const alunos = (alunosData ?? []) as unknown as Aluno[];
 
-      // Busca professores relacionados
       const profIds = [...new Set(ocorrencias.map((o) => o.professor_id))];
       const { data: profData } = await supabaseClient.from('perfis').select('*').in('id', profIds);
       const professores = (profData ?? []) as unknown as Perfil[];
@@ -398,10 +329,6 @@ export function useBuscaAtiva() {
     }
   }
 
-  /**
-   * alternarBloqueioRetorno - Alterna a flag exige_presenca_responsavel
-   * de uma ocorrência (mecanismo de Bloqueio de Retorno).
-   */
   async function alternarBloqueioRetorno(
     ocorrenciaId: string,
     novoValor: boolean,
@@ -422,15 +349,10 @@ export function useBuscaAtiva() {
     }
   }
 
-  /**
-   * buscarJustificativasPendentes - Lista todas as justificativas
-   * (frequências com justificativa preenchida) para validação.
-   */
   async function buscarJustificativasPendentes(): Promise<JustificativaPendente[]> {
     carregando.value = true;
     erro.value = null;
     try {
-      // Frequências que possuem justificativa ou anexo
       const { data: freqData, error: err } = await supabaseClient
         .from('frequencias')
         .select('*')
@@ -447,7 +369,6 @@ export function useBuscaAtiva() {
         .in('id', alunoIds);
       const alunos = (alunosData ?? []) as unknown as Aluno[];
 
-      // Buscar responsáveis vinculados a cada aluno
       const { data: vinculosData } = await supabaseClient
         .from('vinculos_responsaveis')
         .select('*')
@@ -498,7 +419,6 @@ export function useBuscaAtiva() {
   ): Promise<boolean> {
     try {
       const prefixo = acao === 'aceitar' ? '[ACEITA] ' : '[RECUSADA] ';
-      // Busca justificativa atual e atualiza com prefixo
       const { data: atual, error: errBusca } = await supabaseClient
         .from('frequencias')
         .select('justificativa')
@@ -527,9 +447,7 @@ export function useBuscaAtiva() {
   }
 
   /**
-   * calcularEstatisticasPainel - Calcula as estatísticas do
-   * Painel Confidencial de Busca Ativa a partir das listas
-   * já carregadas (evita nova query).
+   * Estatísticas do Painel Confidencial a partir de listas já carregadas.
    */
   function calcularEstatisticasPainel(
     ranking: AlunoRisco[],
@@ -595,14 +513,6 @@ export function useBuscaAtiva() {
     ];
   }
 
-  // =========================================================
-  // RESPONSÁVEL
-  // =========================================================
-
-  /**
-   * buscarFilhosDoResponsavel - Busca os alunos vinculados ao
-   * responsável autenticado.
-   */
   async function buscarFilhosDoResponsavel(responsavelId: string): Promise<Aluno[]> {
     carregando.value = true;
     erro.value = null;
@@ -635,10 +545,6 @@ export function useBuscaAtiva() {
     }
   }
 
-  /**
-   * buscarTermometroAluno - Calcula o termômetro de atenção de
-   * um aluno específico (ausências + ocorrências).
-   */
   async function buscarTermometroAluno(
     alunoId: string,
     alunoNome: string,
@@ -691,11 +597,6 @@ export function useBuscaAtiva() {
     }
   }
 
-  /**
-   * buscarAlertasResponsavel - Lista alertas de ausência e
-   * suspensão para o painel do responsável, com base nas
-   * frequências e ocorrências dos filhos vinculados.
-   */
   async function buscarAlertasResponsavel(responsavelId: string): Promise<AlertaResponsavel[]> {
     try {
       const filhos = await buscarFilhosDoResponsavel(responsavelId);
@@ -704,7 +605,6 @@ export function useBuscaAtiva() {
       const alertas: AlertaResponsavel[] = [];
 
       for (const filho of filhos) {
-        // Ausências registradas (escola inteira ou aula específica)
         const { data: freqs } = await supabaseClient
           .from('frequencias')
           .select('*')
@@ -730,7 +630,6 @@ export function useBuscaAtiva() {
           });
         }
 
-        // Ocorrências graves e suspensões
         const { data: ocos } = await supabaseClient
           .from('ocorrencias')
           .select('*')
@@ -755,7 +654,6 @@ export function useBuscaAtiva() {
         }
       }
 
-      // Mais recentes primeiro
       return alertas.sort((a, b) => (a.data < b.data ? 1 : -1));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -765,10 +663,6 @@ export function useBuscaAtiva() {
     }
   }
 
-  /**
-   * enviarJustificativa - Cria um registro de frequência ausente
-   * com justificativa + anexo (URL pública após upload).
-   */
   async function enviarJustificativa(
     alunoId: string,
     professorId: string,
@@ -834,29 +728,17 @@ export function useBuscaAtiva() {
     return [];
   }
 
-  /**
-   * horarioProtegidoAtivo - Verifica se o horário atual está
-   * dentro do horário protegido do canal de diálogo.
-   *
-   * Horário padrão: dias úteis (seg-sex), 7h às 17h.
-   */
   function horarioProtegidoAtivo(agora: Date = new Date()): boolean {
-    const dia = agora.getDay(); // 0 = Dom, 6 = Sáb
+    const dia = agora.getDay();
     const hora = agora.getHours();
     const minuto = agora.getMinutes();
     const minutosTotais = hora * 60 + minuto;
 
-    // Dias úteis: 1 (Seg) a 5 (Sex)
     if (dia < 1 || dia > 5) return false;
 
-    // 7h às 17h
     return minutosTotais >= 7 * 60 && minutosTotais <= 17 * 60;
   }
 
-  /**
-   * obterHorarioProtegido - Retorna a configuração do horário
-   * protegido (para exibição na UI).
-   */
   function obterHorarioProtegido(): HorarioProtegido {
     return {
       inicio: '07:00',
@@ -869,22 +751,18 @@ export function useBuscaAtiva() {
   }
 
   return {
-    // Estado
     carregando,
     erro,
-    // Professor
     buscarAlunosParaFrequencia,
     registrarFrequenciaEmMassa,
     registrarAusenciaEmPeriodo,
     registrarOcorrenciaGrave,
-    // Gestão
     buscarRankingRisco,
     buscarOcorrenciasGraves,
     alternarBloqueioRetorno,
     buscarJustificativasPendentes,
     validarJustificativa,
     calcularEstatisticasPainel,
-    // Responsável
     buscarFilhosDoResponsavel,
     buscarTermometroAluno,
     buscarAlertasResponsavel,

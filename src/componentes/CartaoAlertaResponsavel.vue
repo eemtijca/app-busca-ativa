@@ -1,17 +1,4 @@
 <script setup lang="ts">
-/**
- * CartaoAlertaResponsavel - Cartão de alerta exibido no painel
- * do responsável. Suporta 4 tipos: ausência da escola, ausência
- * em aula, suspensão e comunicado.
- *
- * É um componente DUMB: recebe o alerta via props e emite ações.
- *
- * API:
- *   - alerta: AlertaResponsavel
- *   - @ver-detalhes: emitido ao clicar em "Ver detalhes"
- *   - @enviar-justificativa: emitido ao clicar em "Enviar justificativa"
- */
-
 import { computed } from 'vue';
 import type { AlertaResponsavel } from '@/tipos/componentes';
 
