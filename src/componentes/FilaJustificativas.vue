@@ -90,9 +90,14 @@ const rotuloStatus: Record<JustificativaPendente['status'], string> = {
       </div>
     </article>
 
-    <p v-if="!justificativas.length" class="text-body-secondary text-center py-4 mb-0">
-      <i class="bi bi-inbox d-block fs-1 mb-2" aria-hidden="true"></i>
-      Nenhuma justificativa pendente.
-    </p>
+    <div v-if="!justificativas.length" class="text-body-secondary text-center py-4 mb-0">
+      <span
+        class="d-inline-flex align-items-center justify-content-center rounded-circle bg-body-tertiary mb-3"
+        style="width: 72px; height: 72px"
+      >
+        <i class="bi bi-inbox fs-4 opacity-50" aria-hidden="true"></i>
+      </span>
+      <p class="mb-0">Nenhuma justificativa pendente.</p>
+    </div>
   </div>
 </template>

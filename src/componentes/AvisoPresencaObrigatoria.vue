@@ -35,7 +35,7 @@ const emit = defineEmits<{
           style="width: 48px; height: 48px"
           aria-hidden="true"
         >
-          <i class="bi bi-exclamation-octagon-fill fs-4"></i>
+          <i class="bi bi-exclamation-octagon fs-4"></i>
         </span>
         <div class="min-w-0 flex-grow-1">
           <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">

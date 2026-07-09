@@ -74,7 +74,7 @@ const mostraSeparador = computed(() => props.variante === 'avatar-removivel');
       aria-label="Remover"
       @click="emit('remover')"
     >
-      <i class="bi bi-x-circle-fill" width="16" height="16" aria-hidden="true"></i>
+      <i class="bi bi-x-circle" width="16" height="16" aria-hidden="true"></i>
     </button>
   </span>
 </template>

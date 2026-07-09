@@ -77,7 +77,7 @@ const classesHeader = computed(() => {
     case 'avatar':
       return 'p-3 mb-3 border-bottom';
     case 'dashboard':
-      return 'navbar navbar-dark bg-dark sticky-top flex-md-nowrap p-0 shadow-sm';
+      return 'navbar navbar-dark bg-primary flex-md-nowrap p-0 shadow-sm';
     default:
       return '';
   }
@@ -114,74 +114,15 @@ const linkClasse = computed(() => {
 </script>
 
 <template>
-  <!--
-    Variante 'dashboard': navbar escura sticky com hamburger,
-    título da página, slot de ações e atalho de acessibilidade.
-    Inspirada no exemplo dashboard/navbar-fixed do Bootstrap 5.3.
-  -->
   <header v-if="variante === 'dashboard'" :class="classesHeader">
     <div class="container-fluid">
       <div class="d-flex align-items-center gap-2 py-2 w-100">
-        <!--
-          Botão hamburger: abre o offcanvas da BarraLateral.
-          Acessível: aria-controls + aria-expanded + aria-label.
-        -->
-        <button
-          class="navbar-toggler d-lg-none flex-shrink-0"
-          type="button"
-          data-bs-toggle="offcanvas"
-          :data-bs-target="'#' + alvoOffcanvas"
-          :aria-controls="alvoOffcanvas"
-          aria-label="Abrir menu de navegação"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <!--
-          Marca + título da página. Em mobile, ocupa o espaço
-          restante; em desktop, fixa à esquerda.
-          Nota de acessibilidade: o título da página aqui é um
-          <span> (não <h1>) porque cada view já define seu próprio
-          <h1> dentro do <main>. Isso evita múltiplos h1 na mesma
-          página, prejudicando a hierarquia semântica.
-        -->
-        <div class="d-flex flex-column justify-content-center min-w-0 flex-grow-1">
-          <div class="d-flex align-items-center gap-2 text-white">
-            <i
-              v-if="marca"
-              class="bi bi-mortarboard-fill d-none d-lg-inline"
-              aria-hidden="true"
-            ></i>
-            <span v-if="marca" class="navbar-brand fw-semibold mb-0 lh-1">{{ marca }}</span>
-            <span
-              v-if="marca && tituloPagina"
-              class="vr text-white-50 d-none d-lg-inline-block"
-              aria-hidden="true"
-            ></span>
-            <span
-              v-if="tituloPagina"
-              class="h6 mb-0 text-truncate fw-semibold lh-1"
-              aria-current="page"
-            >
-              {{ tituloPagina }}
-            </span>
-          </div>
-          <small v-if="subtituloPagina" class="text-white-50 text-truncate d-block">
-            {{ subtituloPagina }}
-          </small>
+        <div class="d-flex align-items-center gap-2 min-w-0 flex-grow-1 text-white">
+          <i v-if="marca" class="bi bi-mortarboard d-none d-sm-inline" aria-hidden="true"></i>
+          <span v-if="marca" class="navbar-brand fw-semibold mb-0 lh-1">{{ marca }}</span>
         </div>
 
-        <!--
-          Slot #acoes: botões contextuais definidos por cada página.
-          NENHUM botão morto ou placeholder é permitido aqui.
-        -->
         <div class="d-flex align-items-center gap-2 flex-shrink-0">
-          <slot name="acoes" />
-
-          <!--
-            Atalho de acessibilidade: abre o offcanvas global
-            de TTS, alto contraste e ajuste de fonte.
-          -->
           <button
             class="btn btn-outline-light btn-sm d-flex align-items-center gap-1"
             type="button"
@@ -195,10 +136,6 @@ const linkClasse = computed(() => {
             <span class="d-none d-xl-inline">Acessibilidade</span>
           </button>
 
-          <!--
-            Slot #usuario: menu do usuário com avatar + dropdown
-            de "Sair". Páginas inteligíveis injetam o conteúdo aqui.
-          -->
           <slot name="usuario" />
         </div>
       </div>
@@ -370,7 +307,6 @@ const linkClasse = computed(() => {
 }
 
 /* Variante dashboard: navbar compacta inspirada no exemplo do Bootstrap */
-.navbar.dashboard,
 .navbar-dark.bg-dark {
   min-height: 56px;
 }

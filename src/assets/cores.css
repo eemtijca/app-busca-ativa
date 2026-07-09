@@ -14,6 +14,12 @@
   --bs-btn-hover-border-color: #005229;
   --bs-btn-active-bg: #005229;
   --bs-btn-active-border-color: #003d1f;
+  --bs-font-sans-serif: 'Geist', system-ui, -apple-system, sans-serif;
+  --bs-font-monospace: 'Geist Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+body {
+  font-family: var(--bs-font-sans-serif);
 }
 
 .btn-outline-primary {

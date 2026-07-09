@@ -92,7 +92,7 @@ const inicialAluno = computed(() =>
               {{ aluno.totalOcorrencias }} ocorrência(s)
             </span>
             <span v-if="aluno.exigePresencaResponsavel" class="badge text-bg-dark">
-              <i class="bi bi-lock-fill me-1" aria-hidden="true"></i>
+              <i class="bi bi-lock me-1" aria-hidden="true"></i>
               Retorno bloqueado
             </span>
           </div>

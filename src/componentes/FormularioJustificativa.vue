@@ -102,7 +102,7 @@ function submeter() {
     </div>
 
     <div v-if="erroValidacao" class="alert alert-danger d-flex align-items-center" role="alert">
-      <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+      <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
       <span>{{ erroValidacao }}</span>
     </div>
 

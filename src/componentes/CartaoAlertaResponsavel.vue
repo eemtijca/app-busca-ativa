@@ -29,22 +29,22 @@ const configTipo: Record<
   { icone: string; classe: string; rotulo: string }
 > = {
   ausencia_escola: {
-    icone: 'bi-door-closed-fill',
+    icone: 'door-closed',
     classe: 'text-bg-danger',
     rotulo: 'Ausência da escola',
   },
   ausencia_aula: {
-    icone: 'bi-clock-fill',
+    icone: 'clock',
     classe: 'text-bg-warning',
     rotulo: 'Ausência em aula',
   },
   suspensao: {
-    icone: 'bi-shield-exclamation',
+    icone: 'shield-exclamation',
     classe: 'text-bg-dark',
     rotulo: 'Suspensão',
   },
   comunicado: {
-    icone: 'bi-megaphone-fill',
+    icone: 'megaphone',
     classe: 'text-bg-info',
     rotulo: 'Comunicado',
   },

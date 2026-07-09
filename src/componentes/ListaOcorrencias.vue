@@ -60,10 +60,10 @@ const rotuloTipo: Record<OcorrenciaGrave['tipo'], string> = {
           <i class="bi bi-person me-1" aria-hidden="true"></i>{{ oc.professorNome }}
         </span>
         <span v-if="oc.bloqueado" class="badge text-bg-dark">
-          <i class="bi bi-lock-fill me-1" aria-hidden="true"></i>Retorno bloqueado
+          <i class="bi bi-lock me-1" aria-hidden="true"></i>Retorno bloqueado
         </span>
         <span v-if="oc.exigePresencaResponsavel" class="badge text-bg-warning">
-          <i class="bi bi-people-fill me-1" aria-hidden="true"></i>Exige responsável
+          <i class="bi bi-people me-1" aria-hidden="true"></i>Exige responsável
         </span>
       </div>
 
@@ -102,9 +102,14 @@ const rotuloTipo: Record<OcorrenciaGrave['tipo'], string> = {
       </div>
     </article>
 
-    <p v-if="!ocorrencias.length" class="text-body-secondary text-center py-4 mb-0">
-      <i class="bi bi-inbox d-block fs-1 mb-2" aria-hidden="true"></i>
-      Nenhuma ocorrência grave registrada.
-    </p>
+    <div v-if="!ocorrencias.length" class="text-body-secondary text-center py-4 mb-0">
+      <span
+        class="d-inline-flex align-items-center justify-content-center rounded-circle bg-body-tertiary mb-3"
+        style="width: 72px; height: 72px"
+      >
+        <i class="bi bi-inbox fs-4 opacity-50" aria-hidden="true"></i>
+      </span>
+      <p class="mb-0">Nenhuma ocorrência grave registrada.</p>
+    </div>
   </div>
 </template>

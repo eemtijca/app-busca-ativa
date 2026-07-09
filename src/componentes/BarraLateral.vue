@@ -96,7 +96,7 @@ function selecionar(item: ItemSidebar) {
     >
       <div class="offcanvas-header border-bottom">
         <h5 class="offcanvas-title fw-bold" :id="idOffcanvasComputado + 'Label'">
-          <i class="bi bi-mortarboard-fill text-primary me-2" aria-hidden="true"></i>
+          <i class="bi bi-mortarboard text-primary me-2" aria-hidden="true"></i>
           <span v-if="marca">{{ marca }}</span>
           <span v-else>Busca Ativa</span>
         </h5>
@@ -132,57 +132,6 @@ function selecionar(item: ItemSidebar) {
             </li>
           </ul>
         </nav>
-
-        <!-- Área do usuário no rodapé da sidebar -->
-        <div v-if="nomeUsuario || itensDropdown.length" class="border-top p-2 mt-auto">
-          <div v-if="itensDropdown.length" class="dropdown">
-            <button
-              type="button"
-              class="btn btn-light d-flex align-items-center gap-2 w-100 text-start rounded-2 p-2"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <span
-                v-if="avatarSrc"
-                class="rounded-circle overflow-hidden flex-shrink-0"
-                style="width: 32px; height: 32px"
-              >
-                <img :src="avatarSrc" alt="" class="w-100 h-100 object-fit-cover" />
-              </span>
-              <span
-                v-else
-                class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle flex-shrink-0"
-                style="width: 32px; height: 32px"
-                aria-hidden="true"
-              >
-                <i class="bi bi-person-fill"></i>
-              </span>
-              <span class="flex-grow-1 text-truncate small fw-semibold">{{ nomeUsuario }}</span>
-              <i class="bi bi-chevron-down small" aria-hidden="true"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end w-100 shadow">
-              <template v-for="item in itensDropdown" :key="item.rotulo">
-                <li v-if="item.dividir"><hr class="dropdown-divider" /></li>
-                <li v-else>
-                  <a class="dropdown-item d-flex align-items-center gap-2" :href="item.url || '#'">
-                    <i v-if="item.icone" :class="'bi bi-' + item.icone" aria-hidden="true"></i>
-                    {{ item.rotulo }}
-                  </a>
-                </li>
-              </template>
-            </ul>
-          </div>
-          <div v-else class="d-flex align-items-center gap-2 p-2">
-            <span
-              class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle flex-shrink-0"
-              style="width: 32px; height: 32px"
-              aria-hidden="true"
-            >
-              <i class="bi bi-person-fill"></i>
-            </span>
-            <span class="text-truncate small fw-semibold">{{ nomeUsuario }}</span>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -202,11 +151,7 @@ function selecionar(item: ItemSidebar) {
       href="/"
       class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none"
     >
-      <i
-        class="bi bi-mortarboard-fill pe-none me-2"
-        style="font-size: 1.5rem"
-        aria-hidden="true"
-      ></i>
+      <i class="bi bi-mortarboard pe-none me-2" style="font-size: 1.5rem" aria-hidden="true"></i>
       <span class="fs-4">{{ marca }}</span>
     </a>
     <hr v-if="marca" />
@@ -264,11 +209,7 @@ function selecionar(item: ItemSidebar) {
       href="/"
       class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none"
     >
-      <i
-        class="bi bi-mortarboard-fill pe-none me-2"
-        style="font-size: 1.5rem"
-        aria-hidden="true"
-      ></i>
+      <i class="bi bi-mortarboard pe-none me-2" style="font-size: 1.5rem" aria-hidden="true"></i>
       <span class="fs-4">{{ marca }}</span>
     </a>
     <hr v-if="marca" />
@@ -329,7 +270,7 @@ function selecionar(item: ItemSidebar) {
       data-bs-toggle="tooltip"
       data-bs-placement="right"
     >
-      <i class="bi bi-mortarboard-fill pe-none" style="font-size: 1.5rem" aria-hidden="true"></i>
+      <i class="bi bi-mortarboard pe-none" style="font-size: 1.5rem" aria-hidden="true"></i>
       <span class="visually-hidden">{{ iconeTooltip }}</span>
     </a>
     <ul class="nav nav-pills nav-flush flex-column mb-auto text-center">
@@ -387,11 +328,7 @@ function selecionar(item: ItemSidebar) {
       href="/"
       class="d-flex align-items-center pb-3 mb-3 link-body-emphasis text-decoration-none border-bottom"
     >
-      <i
-        class="bi bi-mortarboard-fill pe-none me-2"
-        style="font-size: 1.5rem"
-        aria-hidden="true"
-      ></i>
+      <i class="bi bi-mortarboard pe-none me-2" style="font-size: 1.5rem" aria-hidden="true"></i>
       <span class="fs-5 fw-semibold">{{ marca }}</span>
     </a>
     <ul class="list-unstyled ps-0">
@@ -447,11 +384,7 @@ function selecionar(item: ItemSidebar) {
       href="/"
       class="d-flex align-items-center flex-shrink-0 p-3 link-body-emphasis text-decoration-none border-bottom"
     >
-      <i
-        class="bi bi-mortarboard-fill pe-none me-2"
-        style="font-size: 1.5rem"
-        aria-hidden="true"
-      ></i>
+      <i class="bi bi-mortarboard pe-none me-2" style="font-size: 1.5rem" aria-hidden="true"></i>
       <span class="fs-5 fw-semibold">{{ marca }}</span>
     </a>
     <div class="list-group list-group-flush border-bottom scrollarea">
@@ -477,29 +410,40 @@ function selecionar(item: ItemSidebar) {
 </template>
 
 <style scoped>
-/**
- * Estilo da variante 'dashboard', baseado no exemplo
- * dashboard.css do Bootstrap 5.3.
- */
 .sidebar {
   width: 100%;
-  min-height: 100%;
+  height: 100%;
 }
 
 @media (min-width: 992px) {
   .sidebar .offcanvas-lg {
-    position: sticky;
-    top: 0;
+    position: static;
     transform: none;
     visibility: visible !important;
-    height: 100vh !important;
+    height: 100% !important;
+  }
+
+  .sidebar .offcanvas-header {
+    padding: 0.75rem 1rem;
   }
 }
 
+.sidebar .offcanvas-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar nav {
+  flex: 1;
+  overflow-y: auto;
+}
+
 .sidebar .nav-link {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 500;
   color: var(--bs-body-color);
+  padding: 0.5rem 0.75rem;
 }
 
 .sidebar .nav-link:hover {
@@ -508,14 +452,10 @@ function selecionar(item: ItemSidebar) {
 
 .sidebar .nav-link.active {
   color: var(--bs-primary);
-  background-color: var(--bs-primary-bg-subtle);
+  background-color: transparent;
   font-weight: 600;
-}
-
-.sidebar .offcanvas-body {
-  display: flex;
-  flex-direction: column;
-  min-height: calc(100vh - 1px);
+  border-left: 3px solid var(--bs-primary);
+  border-radius: 0;
 }
 
 /* Variantes legadas */

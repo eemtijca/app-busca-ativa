@@ -98,10 +98,15 @@ function submeter() {
       aria-label="Histórico de mensagens"
       style="min-height: 280px; max-height: 60vh"
     >
-      <p v-if="!mensagens.length" class="text-body-secondary text-center my-auto">
-        <i class="bi bi-chat-text d-block fs-1 mb-2" aria-hidden="true"></i>
-        Nenhuma mensagem ainda. Inicie a conversa com a coordenação.
-      </p>
+      <div v-if="!mensagens.length" class="text-body-secondary text-center my-auto py-4">
+        <span
+          class="d-inline-flex align-items-center justify-content-center rounded-circle bg-body-tertiary mb-3"
+          style="width: 72px; height: 72px"
+        >
+          <i class="bi bi-chat-text fs-4 opacity-50" aria-hidden="true"></i>
+        </span>
+        <p class="mb-0">Nenhuma mensagem ainda. Inicie a conversa com a coordenação.</p>
+      </div>
 
       <div
         v-for="msg in mensagens"

@@ -186,7 +186,7 @@ async function handleLogin(): Promise<void> {
         -->
         <div class="text-center mb-4">
           <i
-            class="bi bi-mortarboard-fill"
+            class="bi bi-mortarboard"
             style="font-size: 3rem; color: var(--bs-primary)"
             aria-hidden="true"
           ></i>
