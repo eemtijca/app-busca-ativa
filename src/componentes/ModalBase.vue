@@ -29,7 +29,7 @@ const props = withDefaults(
     variante?: 'padrao' | 'folha' | 'escolha' | 'tour' | 'cadastro';
     titulo?: string;
     modelValue: boolean;
-    tamanho?: 'sm' | 'lg' | 'xl';
+    tamanho?: 'sm' | 'md' | 'lg' | 'xl';
     fecharLabel?: string;
     rotuloSim?: string;
     rotuloNao?: string;
@@ -38,7 +38,7 @@ const props = withDefaults(
   {
     variante: 'padrao',
     titulo: '',
-    tamanho: 'sm',
+    tamanho: 'md',
     fecharLabel: '',
     rotuloSim: '',
     rotuloNao: '',
@@ -74,7 +74,7 @@ watch(
   },
 );
 
-const classesDialog = `modal-dialog${props.tamanho !== 'sm' ? ' modal-' + props.tamanho : ''}${props.variante === 'folha' ? ' modal-dialog-centered' : ''}`;
+const classesDialog = `modal-dialog${props.tamanho !== 'md' ? ' modal-' + props.tamanho : ''}${props.variante === 'folha' ? ' modal-dialog-centered' : ''}`;
 const classesModal = `${props.variante === 'folha' ? 'modal-sheet' : ''} modal fade`;
 
 function definirRef(el: unknown) {
