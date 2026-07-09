@@ -121,12 +121,14 @@ const linkClasse = computed(() => {
           />
         </form>
         <div class="text-end">
-          <button v-if="rotuloEntrar" type="button" class="btn btn-outline-light me-2">
-            {{ rotuloEntrar }}
-          </button>
-          <button v-if="rotuloCadastrar" type="button" class="btn btn-warning">
-            {{ rotuloCadastrar }}
-          </button>
+          <slot name="acoes">
+            <button v-if="rotuloEntrar" type="button" class="btn btn-outline-light me-2">
+              {{ rotuloEntrar }}
+            </button>
+            <button v-if="rotuloCadastrar" type="button" class="btn btn-warning">
+              {{ rotuloCadastrar }}
+            </button>
+          </slot>
         </div>
       </div>
     </div>
