@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
 import { supabaseClient } from '@/servicos/supabase';
@@ -8,6 +8,8 @@ import type { JustificativaPendente } from '@/tipos/componentes';
 
 const router = useRouter();
 const { buscarJustificativasPendentes, validarJustificativa } = useBuscaAtiva();
+
+let canalJustificativas: ReturnType<typeof supabaseClient.channel>;
 
 const justificativas = ref<JustificativaPendente[]>([]);
 const mensagemSucesso = ref<string | null>(null);
@@ -73,7 +75,7 @@ onMounted(async () => {
     else if (texto.startsWith('[RECUSADA]')) status = 'recusada';
     return { ...just, status };
   });
-  supabaseClient
+  canalJustificativas = supabaseClient
     .channel('justificativas-gestao')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'frequencias' }, () =>
       buscarJustificativasPendentes().then((r) => {
@@ -87,6 +89,10 @@ onMounted(async () => {
       }),
     )
     .subscribe();
+});
+
+onUnmounted(() => {
+  if (canalJustificativas) supabaseClient.removeChannel(canalJustificativas);
 });
 </script>
 

@@ -14,7 +14,7 @@ async function carregarPerfil() {
     data: { session },
   } = await supabaseClient.auth.getSession();
 
-  if (!session) {
+  if (!session?.user?.id) {
     usuario.value = null;
     return;
   }
@@ -36,7 +36,7 @@ async function carregarPerfil() {
  * sem necessidade de onMounted ou polling.
  */
 supabaseClient.auth.onAuthStateChange((event, session) => {
-  if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+  if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
     if (session?.access_token) {
       const claims = decodificarToken(session.access_token);
 
@@ -54,9 +54,25 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
       }
     }
     carregando.value = false;
+  } else if (event === 'INITIAL_SESSION') {
+    if (session?.access_token) {
+      const claims = decodificarToken(session.access_token);
+      if (claims?.papel && claims?.nome) {
+        usuario.value = {
+          id: claims.sub,
+          nome: claims.nome,
+          papel: claims.papel as PapelUsuario,
+          email: claims.email ?? null,
+          telefone: null,
+          created_at: '',
+        };
+      }
+    }
+    carregando.value = false;
   } else if (event === 'SIGNED_OUT') {
     usuario.value = null;
     carregando.value = false;
+    supabaseClient.removeAllChannels();
   }
 });
 
@@ -82,6 +98,7 @@ export function useAutenticacao() {
 
   /** Encerra a sessao atual (scope: 'local' = nao afeta outras abas). */
   async function logout() {
+    supabaseClient.removeAllChannels();
     await supabaseClient.auth.signOut({ scope: 'local' });
     usuario.value = null;
   }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
 import { supabaseClient } from '@/servicos/supabase';
@@ -12,6 +12,8 @@ const { buscarRankingRisco, carregando } = useBuscaAtiva();
 const ranking = ref<AlunoRisco[]>([]);
 const filtroRisco = ref<'todos' | 'alto' | 'medio' | 'baixo'>('todos');
 const buscaAluno = ref('');
+
+let canalRanking: ReturnType<typeof supabaseClient.channel>;
 
 const rankingFiltrado = computed(() => {
   let lista = ranking.value;
@@ -38,12 +40,16 @@ function contatarFamilia() {}
 
 onMounted(async () => {
   ranking.value = await buscarRankingRisco();
-  supabaseClient
+  canalRanking = supabaseClient
     .channel('ranking')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'frequencias' }, () =>
       buscarRankingRisco().then((r) => (ranking.value = r)),
     )
     .subscribe();
+});
+
+onUnmounted(() => {
+  if (canalRanking) supabaseClient.removeChannel(canalRanking);
 });
 </script>
 

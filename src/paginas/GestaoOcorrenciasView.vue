@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
 import { supabaseClient } from '@/servicos/supabase';
@@ -8,6 +8,8 @@ import type { OcorrenciaGrave } from '@/tipos/componentes';
 
 const router = useRouter();
 const { buscarOcorrenciasGraves, alternarBloqueioRetorno } = useBuscaAtiva();
+
+let canalOcorrencias: ReturnType<typeof supabaseClient.channel>;
 
 const ocorrencias = ref<OcorrenciaGrave[]>([]);
 const mensagemSucesso = ref<string | null>(null);
@@ -52,12 +54,16 @@ function registrarSuspensao() {
 
 onMounted(async () => {
   ocorrencias.value = await buscarOcorrenciasGraves();
-  supabaseClient
+  canalOcorrencias = supabaseClient
     .channel('ocorrencias-gestao')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'ocorrencias' }, () =>
       buscarOcorrenciasGraves().then((r) => (ocorrencias.value = r)),
     )
     .subscribe();
+});
+
+onUnmounted(() => {
+  if (canalOcorrencias) supabaseClient.removeChannel(canalOcorrencias);
 });
 </script>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
 import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
@@ -11,6 +11,8 @@ const router = useRouter();
 const { usuario } = useAutenticacao();
 const { buscarAlertasResponsavel } = useBuscaAtiva();
 
+let canalAlertas: ReturnType<typeof supabaseClient.channel>;
+
 const alertas = ref<AlertaResponsavel[]>([]);
 
 function abrirJustificativa() {
@@ -21,13 +23,17 @@ onMounted(async () => {
   if (usuario.value) {
     alertas.value = await buscarAlertasResponsavel(usuario.value.id);
   }
-  supabaseClient
+  canalAlertas = supabaseClient
     .channel('alertas-responsavel')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'frequencias' }, () => {
       if (usuario.value)
         buscarAlertasResponsavel(usuario.value.id).then((r) => (alertas.value = r));
     })
     .subscribe();
+});
+
+onUnmounted(() => {
+  if (canalAlertas) supabaseClient.removeChannel(canalAlertas);
 });
 </script>
 
