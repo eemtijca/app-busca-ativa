@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue';
-import { supabaseClient, decodificarToken } from '@/servicos/supabase';
+import { supabaseClient, decodificarToken, armazenamento } from '@/servicos/supabase';
 import type { Perfil, PapelUsuario } from '@/tipos/database';
 
 const usuario: Ref<Perfil | null> = ref(null);
@@ -100,6 +100,7 @@ export function useAutenticacao() {
   async function logout() {
     supabaseClient.removeAllChannels();
     await supabaseClient.auth.signOut({ scope: 'local' });
+    armazenamento.limparTudo();
     usuario.value = null;
   }
 

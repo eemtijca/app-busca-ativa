@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { jwtDecode } from 'jwt-decode';
+import { armazenamento } from './armazenamentoAdaptavel';
 
 const supabaseUrl: string = import.meta.env.VITE_SUPABASE_URL ?? '';
 const supabasePublishableKey: string = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? '';
@@ -10,7 +11,9 @@ if (!supabaseUrl || !supabasePublishableKey) {
   );
 }
 
-export const supabaseClient: SupabaseClient = createClient(supabaseUrl, supabasePublishableKey);
+export const supabaseClient: SupabaseClient = createClient(supabaseUrl, supabasePublishableKey, {
+  auth: { storage: armazenamento },
+});
 
 /** Claims injetadas no JWT via Custom Access Token Hook. */
 interface TokenClaims {
@@ -25,6 +28,8 @@ interface TokenClaims {
  * Decodifica o JWT sem latencia de rede (diferente de getSession()).
  * Usado pelo router guard para ler 'papel' da claim do token.
  */
+export { armazenamento };
+
 export function decodificarToken(accessToken: string): TokenClaims | null {
   try {
     const claims = jwtDecode<TokenClaims>(accessToken);
