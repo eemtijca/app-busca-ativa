@@ -18,7 +18,7 @@ const carregando = ref(true);
 
 async function selecionarFilho(filho: Aluno) {
   filhoSelecionado.value = filho;
-  termometro.value = await buscarTermometroAluno(filho.id, filho.nome, filho.turma || '');
+  termometro.value = await buscarTermometroAluno(filho.id, filho.nome, '');
 }
 
 onMounted(async () => {
@@ -60,7 +60,7 @@ onMounted(async () => {
         "
       >
         <option v-for="f in filhos" :key="f.id" :value="f.id">
-          {{ f.nome }}<span v-if="f.turma"> — {{ f.turma }}</span>
+          {{ f.nome }}<span v-if="f.matricula"> — {{ f.matricula }}</span>
         </option>
       </select>
     </div>

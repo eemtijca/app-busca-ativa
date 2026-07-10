@@ -2,12 +2,14 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
+import { armazenamento } from '@/servicos/supabase';
 
 const router = useRouter();
 const { usuario, login } = useAutenticacao();
 
 const email = ref('');
 const senha = ref('');
+const lembrar = ref(false);
 const carregando = ref(false);
 const erro = ref<string | null>(null);
 
@@ -56,6 +58,8 @@ async function handleLogin(): Promise<void> {
 
   carregando.value = true;
   erro.value = null;
+
+  armazenamento.definirLembrar(lembrar.value);
 
   try {
     await login(email.value.trim(), senha.value);
@@ -137,6 +141,11 @@ async function handleLogin(): Promise<void> {
             required
           />
           <label for="senha">Senha</label>
+        </div>
+
+        <div class="form-check text-start mb-3">
+          <input id="lembrar" v-model="lembrar" type="checkbox" class="form-check-input" />
+          <label class="form-check-label" for="lembrar">Manter-me conectado(a)</label>
         </div>
 
         <button type="submit" class="btn btn-primary w-100 py-2" :disabled="carregando">

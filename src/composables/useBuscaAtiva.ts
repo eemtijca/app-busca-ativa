@@ -1,6 +1,13 @@
 import { ref, type Ref } from 'vue';
 import { supabaseClient } from '@/servicos/supabase';
-import type { Aluno, Frequencia, Ocorrencia, Perfil, VinculoResponsavel } from '@/tipos/database';
+import type {
+  Aluno,
+  Frequencia,
+  Ocorrencia,
+  Perfil,
+  VinculoResponsavel,
+  JustificativaFalta,
+} from '@/tipos/database';
 import type {
   AlunoFrequencia,
   AlunoRisco,
@@ -84,7 +91,7 @@ export function useBuscaAtiva() {
         id: aluno.id,
         nome: aluno.nome,
         matricula: aluno.matricula,
-        turma: aluno.turma,
+        turma: null,
         ausente: false,
         periodosAusentes: [],
       }));
@@ -118,8 +125,6 @@ export function useBuscaAtiva() {
         data_aula: dataAula,
         periodo,
         status: 'ausente' as const,
-        justificativa: null,
-        anexo_url: null,
       }));
 
       const { error: err } = await supabaseClient.from('frequencias').insert(insercoes);
@@ -143,7 +148,6 @@ export function useBuscaAtiva() {
     professorId: string,
     dataAula: string,
     periodo: string,
-    justificativa: string | null = null,
   ): Promise<boolean> {
     carregando.value = true;
     erro.value = null;
@@ -154,8 +158,6 @@ export function useBuscaAtiva() {
         data_aula: dataAula,
         periodo,
         status: 'ausente',
-        justificativa,
-        anexo_url: null,
       });
 
       if (err) throw err;
@@ -176,18 +178,26 @@ export function useBuscaAtiva() {
     descricao: string,
     tipo: 'grave' | 'suspensao' = 'grave',
     exigePresencaResponsavel = false,
-    anexoUrl: string | null = null,
   ): Promise<boolean> {
     carregando.value = true;
     erro.value = null;
     try {
+      const { data: enturmacao } = await supabaseClient
+        .from('enturmacoes')
+        .select('turma_id, ano_letivo_id')
+        .eq('aluno_id', alunoId)
+        .eq('status', 'matriculado')
+        .single();
+      if (!enturmacao) throw new Error('Aluno não está matriculado em nenhuma turma.');
+
       const { error: err } = await supabaseClient.from('ocorrencias').insert({
         aluno_id: alunoId,
         professor_id: professorId,
+        turma_id: enturmacao.turma_id,
+        ano_letivo_id: enturmacao.ano_letivo_id,
+        titulo: descricao.slice(0, 100),
         descricao,
         tipo,
-        status_justificativa: 'pendente',
-        anexo_url: anexoUrl,
         exige_presenca_responsavel: exigePresencaResponsavel,
       });
 
@@ -248,8 +258,8 @@ export function useBuscaAtiva() {
           id: aluno.id,
           nome: aluno.nome,
           matricula: aluno.matricula,
-          turma: aluno.turma,
-          serie: aluno.serie,
+          turma: null,
+          serie: null,
           totalAusencias,
           totalOcorrencias,
           nivel: calcularNivelRisco(totalAusencias, totalOcorrencias),
@@ -308,13 +318,11 @@ export function useBuscaAtiva() {
           id: oc.id,
           alunoNome: aluno?.nome ?? 'Aluno não encontrado',
           alunoMatricula: aluno?.matricula ?? '—',
-          turma: aluno?.turma ?? null,
+          turma: null,
           descricao: oc.descricao,
           tipo: oc.tipo,
           data: formatarData(oc.created_at),
           professorNome: prof?.nome,
-          anexoUrl: oc.anexo_url,
-          anexoNome: oc.anexo_url ? 'documento.pdf' : undefined,
           exigePresencaResponsavel: oc.exige_presenca_responsavel,
           bloqueado: oc.exige_presenca_responsavel,
         };
@@ -353,47 +361,35 @@ export function useBuscaAtiva() {
     carregando.value = true;
     erro.value = null;
     try {
-      const { data: freqData, error: err } = await supabaseClient
-        .from('frequencias')
+      const { data: justData, error: err } = await supabaseClient
+        .from('justificativas_faltas')
         .select('*')
-        .not('justificativa', 'is', null)
-        .order('data_aula', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (err) throw err;
-      const frequencias = (freqData ?? []) as unknown as Frequencia[];
+      const justificativas = (justData ?? []) as unknown as JustificativaFalta[];
 
-      const alunoIds = [...new Set(frequencias.map((f) => f.aluno_id))];
+      const alunoIds = [...new Set(justificativas.map((j) => j.aluno_id))];
       const { data: alunosData } = await supabaseClient
         .from('alunos')
         .select('*')
         .in('id', alunoIds);
       const alunos = (alunosData ?? []) as unknown as Aluno[];
 
-      const { data: vinculosData } = await supabaseClient
-        .from('vinculos_responsaveis')
-        .select('*')
-        .in('aluno_id', alunoIds);
-      const vinculos = (vinculosData ?? []) as unknown as VinculoResponsavel[];
-
-      const respIds = [...new Set(vinculos.map((v) => v.responsavel_id))];
+      const respIds = [...new Set(justificativas.map((j) => j.responsavel_id))];
       const { data: respData } = await supabaseClient.from('perfis').select('*').in('id', respIds);
       const responsaveis = (respData ?? []) as unknown as Perfil[];
 
-      return frequencias.map((f) => {
-        const aluno = alunos.find((a) => a.id === f.aluno_id);
-        const vinculo = vinculos.find((v) => v.aluno_id === f.aluno_id);
-        const responsavel = vinculo
-          ? responsaveis.find((r) => r.id === vinculo.responsavel_id)
-          : undefined;
+      return justificativas.map((j) => {
+        const aluno = alunos.find((a) => a.id === j.aluno_id);
+        const responsavel = responsaveis.find((r) => r.id === j.responsavel_id);
         return {
-          id: f.id,
+          id: j.id,
           alunoNome: aluno?.nome ?? 'Aluno não encontrado',
           responsavelNome: responsavel?.nome ?? 'Responsável não vinculado',
-          dataAusencia: formatarData(f.data_aula),
-          motivo: f.justificativa ?? 'Sem descrição',
-          anexoUrl: f.anexo_url,
-          anexoNome: f.anexo_url ? 'arquivo.pdf' : undefined,
-          status: 'pendente' as const,
+          dataAusencia: formatarData(j.data_falta),
+          motivo: j.motivo,
+          status: j.status as JustificativaPendente['status'],
         };
       });
     } catch (e) {
@@ -406,35 +402,19 @@ export function useBuscaAtiva() {
     }
   }
 
-  /**
-   * validarJustificativa - Aceita ou recusa uma justificativa.
-   * Como o schema atual não possui campo "status" na tabela
-   * frequencias, a validação é registrada via inserção/atualização
-   * do campo justificativa (texto) com prefixo [ACEITA] ou [RECUSADA].
-   * Em produção, recomenda-se adicionar coluna status_justificativa.
-   */
   async function validarJustificativa(
-    frequenciaId: string,
+    justificativaId: string,
     acao: 'aceitar' | 'recusar',
   ): Promise<boolean> {
     try {
-      const prefixo = acao === 'aceitar' ? '[ACEITA] ' : '[RECUSADA] ';
-      const { data: atual, error: errBusca } = await supabaseClient
-        .from('frequencias')
-        .select('justificativa')
-        .eq('id', frequenciaId)
-        .single();
-
-      if (errBusca) throw errBusca;
-
-      const justificativaAtual = (atual as unknown as { justificativa: string | null })
-        ?.justificativa;
-      const novaJustificativa = prefixo + (justificativaAtual ?? '');
-
+      const status = acao === 'aceitar' ? 'aceita' : 'recusada';
       const { error: err } = await supabaseClient
-        .from('frequencias')
-        .update({ justificativa: novaJustificativa })
-        .eq('id', frequenciaId);
+        .from('justificativas_faltas')
+        .update({
+          status,
+          avaliado_em: new Date().toISOString(),
+        })
+        .eq('id', justificativaId);
 
       if (err) throw err;
       return true;
@@ -621,9 +601,7 @@ export function useBuscaAtiva() {
             tipo:
               aus.periodo === 'Dia completo' || !aus.periodo ? 'ausencia_escola' : 'ausencia_aula',
             titulo: `Falta registrada — ${filho.nome}`,
-            descricao: aus.justificativa
-              ? `Justificativa: ${aus.justificativa}`
-              : 'Sem justificativa enviada.',
+            descricao: 'Sem justificativa enviada.',
             data: dataFormatada,
             periodo: aus.periodo,
             urgente: false,
@@ -665,41 +643,20 @@ export function useBuscaAtiva() {
 
   async function enviarJustificativa(
     alunoId: string,
-    professorId: string,
+    _professorId: string,
     dataAusencia: string,
     motivo: string,
-    arquivo: File | null,
+    _arquivo: File | null,
     responsavelId: string,
   ): Promise<boolean> {
     carregando.value = true;
     erro.value = null;
     try {
-      let anexoUrl: string | null = null;
-
-      if (arquivo) {
-        const caminho = `justificativas/${responsavelId}/${alunoId}/${Date.now()}_${arquivo.name}`;
-        const { error: errUpload } = await supabaseClient.storage
-          .from('justificativas')
-          .upload(caminho, arquivo);
-
-        if (errUpload) {
-          console.warn('[useBuscaAtiva] Upload falhou, prosseguindo sem anexo:', errUpload.message);
-        } else {
-          const { data: urlPublica } = supabaseClient.storage
-            .from('justificativas')
-            .getPublicUrl(caminho);
-          anexoUrl = urlPublica?.publicUrl ?? null;
-        }
-      }
-
-      const { error: err } = await supabaseClient.from('frequencias').insert({
+      const { error: err } = await supabaseClient.from('justificativas_faltas').insert({
         aluno_id: alunoId,
-        professor_id: professorId,
-        data_aula: dataAusencia,
-        periodo: 'Justificativa enviada pelo responsável',
-        status: 'ausente',
-        justificativa: motivo,
-        anexo_url: anexoUrl,
+        responsavel_id: responsavelId,
+        data_falta: dataAusencia,
+        motivo,
       });
 
       if (err) throw err;

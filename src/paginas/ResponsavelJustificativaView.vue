@@ -70,7 +70,7 @@ onMounted(async () => {
       <label for="filhoSelect" class="form-label fw-semibold small">Aluno</label>
       <select id="filhoSelect" class="form-select" v-model="filhoSelecionado">
         <option v-for="f in filhos" :key="f.id" :value="f">
-          {{ f.nome }}<span v-if="f.turma"> — {{ f.turma }}</span>
+          {{ f.nome }}<span v-if="f.matricula"> — {{ f.matricula }}</span>
         </option>
       </select>
     </div>
@@ -88,7 +88,7 @@ onMounted(async () => {
       <div class="card-body">
         <FormularioJustificativa
           :aluno-nome="filhoSelecionado?.nome || ''"
-          :aluno-turma="filhoSelecionado?.turma || ''"
+          :aluno-turma="''"
           :enviando="enviando"
           @enviar="handleEnviarJustificativa"
         />

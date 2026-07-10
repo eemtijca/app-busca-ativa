@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue';
-import { supabaseClient, decodificarToken } from '@/servicos/supabase';
+import { supabaseClient, decodificarToken, armazenamento } from '@/servicos/supabase';
 import type { Perfil, PapelUsuario } from '@/tipos/database';
 
 const usuario: Ref<Perfil | null> = ref(null);
@@ -47,7 +47,12 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
           papel: claims.papel as PapelUsuario,
           email: claims.email ?? null,
           telefone: null,
+          cargo: null,
+          notificacoes_ativas: true,
+          status: 'ativo',
+          ultimo_acesso_em: null,
           created_at: '',
+          updated_at: '',
         };
       } else {
         carregarPerfil();
@@ -64,7 +69,12 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
           papel: claims.papel as PapelUsuario,
           email: claims.email ?? null,
           telefone: null,
+          cargo: null,
+          notificacoes_ativas: true,
+          status: 'ativo',
+          ultimo_acesso_em: null,
           created_at: '',
+          updated_at: '',
         };
       }
     }
@@ -100,6 +110,7 @@ export function useAutenticacao() {
   async function logout() {
     supabaseClient.removeAllChannels();
     await supabaseClient.auth.signOut({ scope: 'local' });
+    armazenamento.limparTudo();
     usuario.value = null;
   }
 
