@@ -28,7 +28,6 @@ async function confirmar() {
     usuario.value.id,
     dataAula.value,
     periodo.value,
-    justificativa.value.trim() || null,
   );
   if (ok) {
     router.back();

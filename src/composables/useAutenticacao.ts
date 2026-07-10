@@ -47,7 +47,12 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
           papel: claims.papel as PapelUsuario,
           email: claims.email ?? null,
           telefone: null,
+          cargo: null,
+          notificacoes_ativas: true,
+          status: 'ativo',
+          ultimo_acesso_em: null,
           created_at: '',
+          updated_at: '',
         };
       } else {
         carregarPerfil();
@@ -64,7 +69,12 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
           papel: claims.papel as PapelUsuario,
           email: claims.email ?? null,
           telefone: null,
+          cargo: null,
+          notificacoes_ativas: true,
+          status: 'ativo',
+          ultimo_acesso_em: null,
           created_at: '',
+          updated_at: '',
         };
       }
     }
