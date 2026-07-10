@@ -291,6 +291,7 @@ create table public.frequencias (
   client_request_id uuid,
   deleted_at        timestamptz,
   created_at        timestamptz                 not null default now(),
+  updated_at        timestamptz                 not null default now(),
   constraint uq_frequencia_client_req unique (client_request_id)
 );
 
@@ -361,6 +362,7 @@ create table public.anexos (
   expurgo_em      timestamptz   not null default (now() + interval '30 days'),
   expurgado_em    timestamptz,
   created_at      timestamptz   not null default now(),
+  updated_at      timestamptz   not null default now(),
   constraint chk_anexo_tamanho check (tamanho_bytes <= 153600)
 );
 
@@ -435,6 +437,7 @@ create table public.mensagens (
   deleted_at           timestamptz,
   client_request_id    uuid,
   created_at           timestamptz not null default now(),
+  updated_at           timestamptz not null default now(),
   constraint uq_mensagem_client_req unique (client_request_id),
   constraint chk_mensagem_nao_vazia check (length(trim(conteudo)) > 0)
 );
@@ -531,6 +534,7 @@ create table public.exportacoes (
   arquivo_path    text,
   status          status_exportacao  not null default 'agendada',
   created_at      timestamptz        not null default now(),
+  updated_at      timestamptz        not null default now(),
   finished_at     timestamptz,
   constraint chk_periodo_exportacao check (periodo_fim >= periodo_inicio),
   constraint chk_exportacao_formato check (formato in ('csv', 'json'))
@@ -566,6 +570,7 @@ create table public.convites (
   expira_em      timestamptz not null,
   aceito_em      timestamptz,
   created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now(),
   constraint chk_convite_status check (status in ('pendente', 'aceito', 'expirado', 'revogado'))
 );
 
@@ -613,7 +618,7 @@ begin
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data ->> 'nome', split_part(new.email, '@', 1)),
-    coalesce((new.raw_user_meta_data ->> 'papel')::papel_perfil, 'responsavel')
+    coalesce((new.raw_user_meta_data ->> 'papel')::public.papel_perfil, 'responsavel')
   )
   on conflict (id) do nothing;
   return new;
@@ -1045,8 +1050,15 @@ create policy "Freq: professor insere"
   on public.frequencias for insert
   to authenticated
   with check (
-    public.get_user_papel() in ('professor', 'gestao')
+    public.get_user_papel() = 'professor'
     and professor_id = auth.uid()
+  );
+
+create policy "Freq: gestao insere"
+  on public.frequencias for insert
+  to authenticated
+  with check (
+    public.get_user_papel() = 'gestao'
   );
 
 create policy "Freq: gestao atualiza"
@@ -1148,8 +1160,15 @@ create policy "Ocorr: professor insere"
   on public.ocorrencias for insert
   to authenticated
   with check (
-    public.get_user_papel() in ('professor', 'gestao')
+    public.get_user_papel() = 'professor'
     and professor_id = auth.uid()
+  );
+
+create policy "Ocorr: gestao insere"
+  on public.ocorrencias for insert
+  to authenticated
+  with check (
+    public.get_user_papel() = 'gestao'
   );
 
 create policy "Ocorr: gestao atualiza"
