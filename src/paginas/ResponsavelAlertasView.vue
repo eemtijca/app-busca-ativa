@@ -13,7 +13,7 @@ const { buscarAlertasResponsavel } = useBuscaAtiva();
 
 const alertas = ref<AlertaResponsavel[]>([]);
 
-function abrirJustificativa(alertaId?: string) {
+function abrirJustificativa() {
   router.push('/responsavel/justificativa');
 }
 

@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
-import { useAcessibilidade } from '@/composables/useAcessibilidade';
 import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
 import type { AlunoFrequencia } from '@/tipos/componentes';
 
 const router = useRouter();
 const { usuario } = useAutenticacao();
 const { buscarAlunosParaFrequencia, registrarAusenciaEmPeriodo, carregando } = useBuscaAtiva();
-const { lerTexto } = useAcessibilidade();
 
 const alunos = ref<AlunoFrequencia[]>([]);
 const alunoId = ref('');
@@ -19,11 +17,6 @@ const mensagemErro = ref<string | null>(null);
 
 const periodosAula = ['1º Horário', '2º Horário', '3º Horário', '4º Horário', 'Manhã', 'Tarde'];
 const dataAula = ref(new Date().toISOString().slice(0, 10));
-
-const alunoNome = computed(() => {
-  const a = alunos.value.find((x) => x.id === alunoId.value);
-  return a?.nome || '';
-});
 
 async function confirmar() {
   if (!usuario.value || !alunoId.value) {
@@ -38,7 +31,6 @@ async function confirmar() {
     justificativa.value.trim() || null,
   );
   if (ok) {
-    lerTexto(`Ausência de ${alunoNome.value} registrada.`);
     router.back();
   } else {
     mensagemErro.value = 'Falha ao registrar. Tente novamente.';

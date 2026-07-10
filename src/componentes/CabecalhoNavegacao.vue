@@ -17,7 +17,6 @@ const props = withDefaults(
     tituloPagina?: string;
     subtituloPagina?: string;
     alvoOffcanvas?: string;
-    alvoAcessibilidade?: string;
   }>(),
   {
     marca: '',
@@ -31,7 +30,6 @@ const props = withDefaults(
     tituloPagina: '',
     subtituloPagina: '',
     alvoOffcanvas: 'barraLateralOffcanvas',
-    alvoAcessibilidade: 'offcanvasAcessibilidade',
   },
 );
 
@@ -89,24 +87,11 @@ const linkClasse = computed(() => {
     <div class="container-fluid">
       <div class="d-flex align-items-center gap-2 py-2 w-100">
         <div class="d-flex align-items-center gap-2 min-w-0 flex-grow-1 text-white">
-          <i v-if="marca" class="bi bi-mortarboard d-none d-sm-inline" aria-hidden="true"></i>
+          <i v-if="marca" class="bi bi-mortarboard" aria-hidden="true"></i>
           <span v-if="marca" class="navbar-brand fw-semibold mb-0 lh-1">{{ marca }}</span>
         </div>
 
         <div class="d-flex align-items-center gap-2 flex-shrink-0">
-          <button
-            class="btn btn-outline-light btn-sm d-flex align-items-center gap-1"
-            type="button"
-            data-bs-toggle="offcanvas"
-            :data-bs-target="'#' + alvoAcessibilidade"
-            :aria-controls="alvoAcessibilidade"
-            aria-label="Abrir ferramentas de acessibilidade"
-            title="Acessibilidade"
-          >
-            <i class="bi bi-universal-access" aria-hidden="true"></i>
-            <span class="d-none d-xl-inline">Acessibilidade</span>
-          </button>
-
           <slot name="usuario" />
         </div>
       </div>

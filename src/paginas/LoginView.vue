@@ -2,11 +2,9 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
-import { useAcessibilidade } from '@/composables/useAcessibilidade';
 
 const router = useRouter();
 const { usuario, login } = useAutenticacao();
-const { lerTexto } = useAcessibilidade();
 
 const email = ref('');
 const senha = ref('');
@@ -75,7 +73,6 @@ async function handleLogin(): Promise<void> {
     }
   } catch (erroDesconhecido: unknown) {
     erro.value = traduzirErro(erroDesconhecido);
-    lerTexto(erro.value);
   } finally {
     carregando.value = false;
   }
@@ -83,7 +80,7 @@ async function handleLogin(): Promise<void> {
 </script>
 
 <template>
-  <div class="d-flex align-items-center py-4 bg-body-tertiary" style="min-height: 100vh">
+  <div class="d-flex align-items-center py-4 bg-body-tertiary" style="min-height: 100dvh">
     <div class="form-signin w-100 m-auto">
       <form @submit.prevent="handleLogin" novalidate>
         <div class="text-center mb-4">

@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAcessibilidade } from '@/composables/useAcessibilidade';
 import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
 import { supabaseClient } from '@/servicos/supabase';
 import CartaoAlunoRisco from '@/componentes/CartaoAlunoRisco.vue';
 import type { AlunoRisco } from '@/tipos/componentes';
 
 const router = useRouter();
-const { lerTexto } = useAcessibilidade();
 const { buscarRankingRisco, carregando } = useBuscaAtiva();
 
 const ranking = ref<AlunoRisco[]>([]);
@@ -36,12 +34,7 @@ const totalRiscoAlto = computed(() => ranking.value.filter((r) => r.nivel === 'a
 const totalRiscoMedio = computed(() => ranking.value.filter((r) => r.nivel === 'medio').length);
 const totalRiscoBaixo = computed(() => ranking.value.filter((r) => r.nivel === 'baixo').length);
 
-function contatarFamilia(alunoId: string) {
-  const aluno = ranking.value.find((a) => a.id === alunoId);
-  if (aluno) {
-    lerTexto(`Família de ${aluno.nome} contatada.`);
-  }
-}
+function contatarFamilia() {}
 
 onMounted(async () => {
   ranking.value = await buscarRankingRisco();

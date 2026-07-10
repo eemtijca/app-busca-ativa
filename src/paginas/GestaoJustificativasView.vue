@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAcessibilidade } from '@/composables/useAcessibilidade';
 import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
 import { supabaseClient } from '@/servicos/supabase';
 import FilaJustificativas from '@/componentes/FilaJustificativas.vue';
 import type { JustificativaPendente } from '@/tipos/componentes';
 
 const router = useRouter();
-const { lerTexto } = useAcessibilidade();
 const { buscarJustificativasPendentes, validarJustificativa } = useBuscaAtiva();
 
 const justificativas = ref<JustificativaPendente[]>([]);
@@ -17,7 +15,6 @@ const mensagemErro = ref<string | null>(null);
 
 function mostrarSucesso(msg: string) {
   mensagemSucesso.value = msg;
-  lerTexto(msg);
   setTimeout(() => (mensagemSucesso.value = null), 4000);
 }
 
