@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { supabaseClient, decodificarToken } from '@/servicos/supabase';
 import LayoutPrincipal from '@/layouts/LayoutPrincipal.vue';
 import LoginView from '@/paginas/LoginView.vue';
+import SolicitarRecuperacaoView from '@/paginas/SolicitarRecuperacaoView.vue';
+import RecuperarSenhaView from '@/paginas/RecuperarSenhaView.vue';
 import ProfessorHomeView from '@/paginas/ProfessorHomeView.vue';
 import ProfessorFrequenciaView from '@/paginas/ProfessorFrequenciaView.vue';
 import ProfessorAusenciaView from '@/paginas/ProfessorAusenciaView.vue';
@@ -40,6 +42,18 @@ const router = createRouter({
       name: 'login',
       meta: { requerAutenticacao: false },
       component: LoginView,
+    },
+    {
+      path: '/solicitar-recuperacao',
+      name: 'solicitar-recuperacao',
+      meta: { requerAutenticacao: false },
+      component: SolicitarRecuperacaoView,
+    },
+    {
+      path: '/recuperar-senha',
+      name: 'recuperar-senha',
+      meta: { requerAutenticacao: false },
+      component: RecuperarSenhaView,
     },
     {
       path: '/professor',
