@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useAutenticacao } from '@/composables/useAutenticacao';
+import { traduzirErro } from '@/utils/traduzirErro';
 
 const { recuperarSenha } = useAutenticacao();
 
@@ -8,25 +9,6 @@ const email = ref('');
 const carregando = ref(false);
 const enviado = ref(false);
 const erro = ref<string | null>(null);
-
-function traduzirErro(erroDesconhecido: unknown): string {
-  const mensagemOriginal =
-    erroDesconhecido instanceof Error ? erroDesconhecido.message : String(erroDesconhecido);
-
-  if (mensagemOriginal.includes('Too many requests')) {
-    return 'Muitas tentativas seguidas. Aguarde um momento e tente novamente.';
-  }
-
-  if (
-    mensagemOriginal.includes('NetworkError') ||
-    mensagemOriginal.includes('TypeError') ||
-    mensagemOriginal.includes('Failed to fetch')
-  ) {
-    return 'Erro de conexão com o servidor. Verifique sua internet e tente novamente.';
-  }
-
-  return 'Ocorreu um erro inesperado. Tente novamente.';
-}
 
 async function handleSolicitarRecuperacao(): Promise<void> {
   if (!email.value.trim()) {
@@ -41,7 +23,7 @@ async function handleSolicitarRecuperacao(): Promise<void> {
     await recuperarSenha(email.value.trim());
     enviado.value = true;
   } catch (erroDesconhecido: unknown) {
-    erro.value = traduzirErro(erroDesconhecido);
+    erro.value = traduzirErro(erroDesconhecido).mensagem;
   } finally {
     carregando.value = false;
   }

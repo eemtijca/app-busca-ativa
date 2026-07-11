@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
 import { armazenamento } from '@/servicos/supabase';
+import { traduzirErro } from '@/utils/traduzirErro';
 
 const router = useRouter();
 const { usuario, login } = useAutenticacao();
@@ -19,37 +20,6 @@ const homePorPapel: Record<string, string> = {
   gestao: '/gestao',
   responsavel: '/responsavel',
 };
-
-function traduzirErro(erroDesconhecido: unknown): string {
-  const mensagemOriginal =
-    erroDesconhecido instanceof Error ? erroDesconhecido.message : String(erroDesconhecido);
-
-  if (mensagemOriginal.includes('Invalid login credentials')) {
-    return 'E-mail ou senha incorretos.';
-  }
-
-  if (mensagemOriginal.includes('Email not confirmed')) {
-    return 'E-mail ainda não confirmado. Verifique sua caixa de entrada.';
-  }
-
-  if (mensagemOriginal.includes('Too many requests')) {
-    return 'Muitas tentativas seguidas. Aguarde um momento e tente novamente.';
-  }
-
-  if (mensagemOriginal.includes('Auth session missing')) {
-    return 'Sessão expirada. Faça login novamente.';
-  }
-
-  if (
-    mensagemOriginal.includes('NetworkError') ||
-    mensagemOriginal.includes('TypeError') ||
-    mensagemOriginal.includes('Failed to fetch')
-  ) {
-    return 'Erro de conexão com o servidor. Verifique sua internet e tente novamente.';
-  }
-
-  return 'Ocorreu um erro inesperado. Tente novamente.';
-}
 
 async function handleLogin(): Promise<void> {
   if (!email.value.trim() || !senha.value.trim()) {
@@ -77,7 +47,7 @@ async function handleLogin(): Promise<void> {
       erro.value = 'Perfil não identificado. Contate a gestão escolar.';
     }
   } catch (erroDesconhecido: unknown) {
-    erro.value = traduzirErro(erroDesconhecido);
+    erro.value = traduzirErro(erroDesconhecido).mensagem;
   } finally {
     carregando.value = false;
   }
