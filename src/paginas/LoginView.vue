@@ -2,10 +2,13 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
+import { useStatusConexao } from '@/composables/useStatusConexao';
+import IndicadorConexao from '@/componentes/IndicadorConexao.vue';
 import { armazenamento } from '@/servicos/supabase';
 
 const router = useRouter();
 const { usuario, login } = useAutenticacao();
+const { status } = useStatusConexao();
 
 const email = ref('');
 const senha = ref('');
@@ -24,11 +27,11 @@ function traduzirErro(erroDesconhecido: unknown): string {
     erroDesconhecido instanceof Error ? erroDesconhecido.message : String(erroDesconhecido);
 
   if (mensagemOriginal.includes('Invalid login credentials')) {
-    return 'Email ou senha incorretos.';
+    return 'E-mail ou senha incorretos.';
   }
 
   if (mensagemOriginal.includes('Email not confirmed')) {
-    return 'Email ainda não confirmado. Verifique sua caixa de entrada.';
+    return 'E-mail ainda não confirmado. Verifique sua caixa de entrada.';
   }
 
   if (mensagemOriginal.includes('Too many requests')) {
@@ -87,15 +90,18 @@ async function handleLogin(): Promise<void> {
   <div class="d-flex align-items-center py-4 bg-body-tertiary" style="min-height: 100dvh">
     <div class="form-signin w-100 m-auto">
       <form @submit.prevent="handleLogin" novalidate>
-        <div class="text-center mb-4">
+        <div class="d-flex align-items-center justify-content-center gap-2 mb-5">
           <i
             class="bi bi-mortarboard"
-            style="font-size: 3rem; color: var(--bs-primary)"
+            style="font-size: 2.5rem; color: var(--bs-primary)"
             aria-hidden="true"
           ></i>
+          <span class="fw-semibold text-body-secondary" style="font-size: 1.75rem">
+            Busca Ativa
+          </span>
         </div>
 
-        <h1 class="h3 mb-3 fw-normal text-center">Entrar</h1>
+        <h1 class="h4 mb-3 fw-normal text-center">Entrar</h1>
 
         <div v-if="erro" class="alert alert-danger d-flex align-items-center" role="alert">
           <svg
@@ -125,7 +131,7 @@ async function handleLogin(): Promise<void> {
             autocomplete="email"
             required
           />
-          <label for="email">Email</label>
+          <label for="email">E-mail</label>
         </div>
 
         <div class="form-floating">
@@ -158,7 +164,10 @@ async function handleLogin(): Promise<void> {
           {{ carregando ? 'Entrando...' : 'Entrar' }}
         </button>
 
-        <p class="mt-5 mb-3 text-body-secondary text-center">Ambiente restrito à equipe escolar</p>
+        <p class="mt-5 mb-1 text-body-secondary text-center" style="font-size: 0.75rem">v0.1.0</p>
+        <div class="d-flex justify-content-center mb-3">
+          <IndicadorConexao :status="status" />
+        </div>
       </form>
     </div>
   </div>

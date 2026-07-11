@@ -8,18 +8,28 @@
   --bs-link-color-rgb: 0, 130, 65;
   --bs-link-hover-color: #006632;
   --bs-link-hover-color-rgb: 0, 102, 50;
-  --bs-btn-bg: #008241;
-  --bs-btn-border-color: #008241;
-  --bs-btn-hover-bg: #006632;
-  --bs-btn-hover-border-color: #005229;
-  --bs-btn-active-bg: #005229;
-  --bs-btn-active-border-color: #003d1f;
   --bs-font-sans-serif: 'Geist', system-ui, -apple-system, sans-serif;
   --bs-font-monospace: 'Geist Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 body {
   font-family: var(--bs-font-sans-serif);
+}
+
+.btn-primary {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #008241;
+  --bs-btn-border-color: #008241;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #006632;
+  --bs-btn-hover-border-color: #005229;
+  --bs-btn-focus-shadow-rgb: 0, 130, 65;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #005229;
+  --bs-btn-active-border-color: #003d1f;
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: #008241;
+  --bs-btn-disabled-border-color: #008241;
 }
 
 .btn-outline-primary {
