@@ -2,13 +2,10 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
-import { useStatusConexao } from '@/composables/useStatusConexao';
-import IndicadorConexao from '@/componentes/IndicadorConexao.vue';
 import { armazenamento } from '@/servicos/supabase';
 
 const router = useRouter();
 const { usuario, login } = useAutenticacao();
-const { status } = useStatusConexao();
 
 const email = ref('');
 const senha = ref('');
@@ -165,9 +162,6 @@ async function handleLogin(): Promise<void> {
         </button>
 
         <p class="mt-5 mb-1 text-body-secondary text-center" style="font-size: 0.75rem">v0.1.0</p>
-        <div class="d-flex justify-content-center mb-3">
-          <IndicadorConexao :status="status" />
-        </div>
       </form>
     </div>
   </div>

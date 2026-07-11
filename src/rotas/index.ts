@@ -15,6 +15,9 @@ import ResponsavelAlertasView from '@/paginas/ResponsavelAlertasView.vue';
 import ResponsavelTermometroView from '@/paginas/ResponsavelTermometroView.vue';
 import ResponsavelJustificativaView from '@/paginas/ResponsavelJustificativaView.vue';
 import ResponsavelChatView from '@/paginas/ResponsavelChatView.vue';
+import Status403View from '@/paginas/Status403View.vue';
+import Status404View from '@/paginas/Status404View.vue';
+import Status500View from '@/paginas/Status500View.vue';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -134,6 +137,21 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: '/403',
+      name: '403',
+      component: Status403View,
+    },
+    {
+      path: '/500',
+      name: '500',
+      component: Status500View,
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: '404',
+      component: Status404View,
+    },
   ],
 });
 
@@ -166,10 +184,12 @@ router.beforeEach(async (to, _from) => {
 
     const papeisPermitidos = to.meta.papeisPermitidos;
 
-    if (papeisPermitidos && perfilPapel && !papeisPermitidos.includes(perfilPapel)) {
-      const destino = homePorPapel[perfilPapel] ?? '/';
-      if (destino !== to.path) {
-        return destino;
+    if (papeisPermitidos) {
+      if (!perfilPapel) {
+        return { name: 'login' };
+      }
+      if (!papeisPermitidos.includes(perfilPapel)) {
+        return { name: '403', query: { destino: homePorPapel[perfilPapel] ?? '/' } };
       }
     }
   }
