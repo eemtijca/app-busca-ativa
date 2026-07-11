@@ -10,6 +10,7 @@ const { usuario, login } = useAutenticacao();
 const email = ref('');
 const senha = ref('');
 const lembrar = ref(false);
+const mostrarSenha = ref(false);
 const carregando = ref(false);
 const erro = ref<string | null>(null);
 
@@ -131,12 +132,12 @@ async function handleLogin(): Promise<void> {
           <label for="email">E-mail</label>
         </div>
 
-        <div class="form-floating">
+        <div class="form-floating position-relative">
           <input
             id="senha"
             v-model="senha"
-            type="password"
-            class="form-control"
+            :type="mostrarSenha ? 'text' : 'password'"
+            class="form-control pe-5"
             :class="{ 'is-invalid': erro && !senha.trim() }"
             placeholder="Senha"
             :disabled="carregando"
@@ -144,6 +145,17 @@ async function handleLogin(): Promise<void> {
             required
           />
           <label for="senha">Senha</label>
+          <button
+            type="button"
+            class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-decoration-none p-1 pe-2"
+            style="z-index: 5"
+            @click="mostrarSenha = !mostrarSenha"
+            :aria-label="mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'"
+            :aria-controls="'senha'"
+            tabindex="-1"
+          >
+            <i :class="mostrarSenha ? 'bi-eye-slash' : 'bi-eye'" class="fs-5 lh-1"></i>
+          </button>
         </div>
 
         <div class="form-check text-start mb-3">
@@ -161,7 +173,15 @@ async function handleLogin(): Promise<void> {
           {{ carregando ? 'Entrando...' : 'Entrar' }}
         </button>
 
-        <p class="mt-5 mb-1 text-body-secondary text-center" style="font-size: 0.75rem">v0.1.0</p>
+        <router-link
+          to="/solicitar-recuperacao"
+          class="d-block text-center mt-2 small link-offset-2"
+          style="text-decoration: none"
+        >
+          Esqueci minha senha
+        </router-link>
+
+        <p class="mt-4 mb-1 text-body-secondary text-center" style="font-size: 0.75rem">v0.1.0</p>
       </form>
     </div>
   </div>

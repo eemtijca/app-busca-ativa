@@ -118,6 +118,25 @@ export function useAutenticacao() {
     return !!usuario.value;
   }
 
+  async function recuperarSenha(email: string) {
+    const origin = import.meta.env.VITE_PUBLIC_SITE_URL ?? window.location.origin;
+    const redirectTo = `${origin}/recuperar-senha`;
+    const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
+    if (error) throw error;
+    return data;
+  }
+
+  async function atualizarSenha(novaSenha: string) {
+    const { data, error } = await supabaseClient.auth.updateUser({
+      password: novaSenha,
+    });
+    if (error) throw error;
+    await supabaseClient.auth.signOut({ scope: 'global' });
+    return data;
+  }
+
   return {
     usuario,
     carregando,
@@ -125,5 +144,7 @@ export function useAutenticacao() {
     logout,
     verificarSessao,
     carregarPerfil,
+    recuperarSenha,
+    atualizarSenha,
   };
 }
