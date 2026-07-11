@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { supabaseClient } from '@/servicos/supabase';
 import { useAutenticacao } from '@/composables/useAutenticacao';
+import { traduzirErro } from '@/utils/traduzirErro';
 
 const { atualizarSenha } = useAutenticacao();
 
@@ -82,25 +83,6 @@ onUnmounted(() => {
   subscription?.unsubscribe();
 });
 
-function traduzirErro(erroDesconhecido: unknown): string {
-  const mensagemOriginal =
-    erroDesconhecido instanceof Error ? erroDesconhecido.message : String(erroDesconhecido);
-
-  if (mensagemOriginal.includes('Password should be')) {
-    return 'A senha não atende aos requisitos mínimos de segurança.';
-  }
-
-  if (
-    mensagemOriginal.includes('NetworkError') ||
-    mensagemOriginal.includes('TypeError') ||
-    mensagemOriginal.includes('Failed to fetch')
-  ) {
-    return 'Erro de conexão com o servidor. Verifique sua internet e tente novamente.';
-  }
-
-  return 'Ocorreu um erro inesperado. Tente novamente.';
-}
-
 async function handleAtualizarSenha(): Promise<void> {
   if (!formularioValido.value) return;
 
@@ -111,7 +93,7 @@ async function handleAtualizarSenha(): Promise<void> {
     await atualizarSenha(senha.value);
     atualizado.value = true;
   } catch (erroDesconhecido: unknown) {
-    erro.value = traduzirErro(erroDesconhecido);
+    erro.value = traduzirErro(erroDesconhecido).mensagem;
   } finally {
     carregando.value = false;
   }
