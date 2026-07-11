@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
+import { useStatusConexao } from '@/composables/useStatusConexao';
+import IndicadorConexao from '@/componentes/IndicadorConexao.vue';
 import CabecalhoNavegacao from '@/componentes/CabecalhoNavegacao.vue';
 
 const router = useRouter();
 
 const { usuario, logout } = useAutenticacao();
+const { status } = useStatusConexao();
 async function handleLogout(): Promise<void> {
   await logout();
   await router.push('/');
@@ -65,11 +68,8 @@ async function handleLogout(): Promise<void> {
       <div
         class="d-flex flex-wrap justify-content-between align-items-center gap-2 small text-body-secondary px-3"
       >
-        <span>
-          <i class="bi bi-mortarboard text-primary me-1" aria-hidden="true"></i>
-          Busca Ativa Escolar
-        </span>
-        <span>Ambiente restrito</span>
+        <IndicadorConexao :status="status" />
+        <span>v0.1.0</span>
       </div>
     </footer>
   </div>
