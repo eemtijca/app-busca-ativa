@@ -7,6 +7,7 @@ import { traduzirErro } from '@/utils/traduzirErro';
 
 const router = useRouter();
 const { usuario, login } = useAutenticacao();
+const recuperacaoHabilitada = import.meta.env.VITE_RECUPERACAO_SENHA_HABILITADA !== 'false';
 
 const email = ref('');
 const senha = ref('');
@@ -144,6 +145,7 @@ async function handleLogin(): Promise<void> {
         </button>
 
         <router-link
+          v-if="recuperacaoHabilitada"
           to="/solicitar-recuperacao"
           class="d-block text-center mt-2 small link-offset-2"
           style="text-decoration: none"

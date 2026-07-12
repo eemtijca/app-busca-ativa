@@ -34,6 +34,12 @@ const homePorPapel: Record<string, string> = {
   responsavel: '/responsavel',
 };
 
+function redirecionarSeDesabilitado() {
+  if (import.meta.env.VITE_RECUPERACAO_SENHA_HABILITADA === 'false') {
+    return { name: 'login' };
+  }
+}
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -47,12 +53,14 @@ const router = createRouter({
       path: '/solicitar-recuperacao',
       name: 'solicitar-recuperacao',
       meta: { requerAutenticacao: false },
+      beforeEnter: redirecionarSeDesabilitado,
       component: SolicitarRecuperacaoView,
     },
     {
       path: '/recuperar-senha',
       name: 'recuperar-senha',
       meta: { requerAutenticacao: false },
+      beforeEnter: redirecionarSeDesabilitado,
       component: RecuperarSenhaView,
     },
     {
