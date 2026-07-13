@@ -32,9 +32,9 @@ const inicialAluno = computed(() =>
         {{ inicialAluno }}
       </span>
 
-      <div class="min-w-0 flex-grow-1">
-        <div class="fw-semibold text-truncate">{{ aluno.nome }}</div>
-        <div class="text-body-secondary small text-truncate">
+      <div class="min-w-0 flex-grow-1" style="overflow-wrap: break-word; word-break: break-word">
+        <div class="fw-semibold">{{ aluno.nome }}</div>
+        <div class="text-body-secondary small">
           <span v-if="aluno.turma">{{ aluno.turma }} · </span>Matrícula {{ aluno.matricula }}
         </div>
         <div v-if="aluno.periodosAusentes && aluno.periodosAusentes.length" class="small mt-1">

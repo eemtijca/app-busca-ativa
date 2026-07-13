@@ -83,5 +83,27 @@ export function traduzirErro(erroDesconhecido: unknown): ErroTraduzido {
     };
   }
 
+  if (
+    mensagemOriginal.includes('Codigo invalido') ||
+    mensagemOriginal.includes('Código inválido')
+  ) {
+    return { mensagem: 'Código inválido. Verifique o código informado.' };
+  }
+
+  if (
+    mensagemOriginal.includes('Codigo expirado') ||
+    mensagemOriginal.includes('Código expirado')
+  ) {
+    return { mensagem: 'Código expirado. Solicite um novo código com a administração.' };
+  }
+
+  if (
+    mensagemOriginal.includes('Cadastro ja existe') ||
+    mensagemOriginal.includes('already exists') ||
+    mensagemOriginal.includes('duplicate key')
+  ) {
+    return { mensagem: 'Este e-mail já está cadastrado no sistema.' };
+  }
+
   return { mensagem: 'Ocorreu um erro inesperado. Tente novamente.' };
 }

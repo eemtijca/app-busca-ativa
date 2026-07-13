@@ -17,6 +17,7 @@ const props = withDefaults(
     tituloPagina?: string;
     subtituloPagina?: string;
     alvoOffcanvas?: string;
+    rotaMarca?: string;
   }>(),
   {
     marca: '',
@@ -30,6 +31,7 @@ const props = withDefaults(
     tituloPagina: '',
     subtituloPagina: '',
     alvoOffcanvas: 'barraLateralOffcanvas',
+    rotaMarca: '',
   },
 );
 
@@ -88,7 +90,14 @@ const linkClasse = computed(() => {
       <div class="d-flex align-items-center gap-2 py-2 w-100">
         <div class="d-flex align-items-center gap-2 min-w-0 flex-grow-1 text-white">
           <i v-if="marca" class="bi bi-mortarboard" aria-hidden="true"></i>
-          <span v-if="marca" class="navbar-brand fw-semibold mb-0 lh-1">{{ marca }}</span>
+          <router-link
+            v-if="marca && rotaMarca"
+            :to="rotaMarca"
+            class="navbar-brand fw-semibold mb-0 lh-1 text-white text-decoration-none"
+          >
+            {{ marca }}
+          </router-link>
+          <span v-else-if="marca" class="navbar-brand fw-semibold mb-0 lh-1">{{ marca }}</span>
         </div>
 
         <div class="d-flex align-items-center gap-2 flex-shrink-0">

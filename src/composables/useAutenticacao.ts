@@ -137,6 +137,42 @@ export function useAutenticacao() {
     return data;
   }
 
+  async function solicitarCodigoRedefinicao(email: string) {
+    const funcaoUrl =
+      import.meta.env.VITE_EDGE_FUNCTIONS_URL ??
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+    const url = `${funcaoUrl}/solicitar-codigo`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const resultado = await response.json();
+    if (!response.ok) {
+      throw new Error(resultado.error ?? 'Erro ao solicitar código.');
+    }
+    return resultado;
+  }
+
+  async function redefinirSenhaComCodigo(email: string, codigo: string, novaSenha: string) {
+    const funcaoUrl =
+      import.meta.env.VITE_EDGE_FUNCTIONS_URL ??
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+    const url = `${funcaoUrl}/redefinir-senha-codigo`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, codigo, novaSenha }),
+    });
+
+    const resultado = await response.json();
+    if (!response.ok) {
+      throw new Error(resultado.error ?? 'Erro ao redefinir senha.');
+    }
+    return resultado;
+  }
+
   return {
     usuario,
     carregando,
@@ -146,5 +182,7 @@ export function useAutenticacao() {
     carregarPerfil,
     recuperarSenha,
     atualizarSenha,
+    solicitarCodigoRedefinicao,
+    redefinirSenhaComCodigo,
   };
 }

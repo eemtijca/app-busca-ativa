@@ -5,6 +5,7 @@ import type {
   Frequencia,
   Ocorrencia,
   Perfil,
+  Turma,
   VinculoResponsavel,
   JustificativaFalta,
 } from '@/tipos/database';
@@ -73,28 +74,86 @@ export function useBuscaAtiva() {
    * buscarAlunosParaFrequencia - Busca a lista de alunos para o
    * professor registrar frequência por exceção. Não filtra por
    * professor específico (a RLS do Supabase garante que o
-   * professor só veja alunos das turmas que lecione).
+   * professor só veja alunos das turmas que lecione). Se dataAula for
+   * informada, busca registros existentes de ausencia para pre-marcar.
    */
-  async function buscarAlunosParaFrequencia(): Promise<AlunoFrequencia[]> {
+  async function buscarAlunosParaFrequencia(dataAula?: string): Promise<AlunoFrequencia[]> {
     carregando.value = true;
     erro.value = null;
     try {
-      const { data, error: err } = await supabaseClient
+      const { data: alunosData, error: errAlunos } = await supabaseClient
         .from('alunos')
         .select('*')
         .order('nome', { ascending: true });
 
-      if (err) throw err;
+      if (errAlunos) throw errAlunos;
 
-      const alunos = (data ?? []) as unknown as Aluno[];
-      return alunos.map((aluno) => ({
-        id: aluno.id,
-        nome: aluno.nome,
-        matricula: aluno.matricula,
-        turma: null,
-        ausente: false,
-        periodosAusentes: [],
-      }));
+      const alunos = (alunosData ?? []) as unknown as Aluno[];
+      const alunoIds = alunos.map((a) => a.id);
+
+      const { data: enturmacoesData } = await supabaseClient
+        .from('enturmacoes')
+        .select('aluno_id, turma_id, ano_letivo_id')
+        .in('aluno_id', alunoIds)
+        .eq('status', 'matriculado');
+
+      const enturmacoes = (enturmacoesData ?? []) as unknown as Array<{
+        aluno_id: string;
+        turma_id: string;
+        ano_letivo_id: string;
+      }>;
+
+      const turmaIds = [...new Set(enturmacoes.map((e) => e.turma_id))];
+      const { data: turmasData } = await supabaseClient
+        .from('turmas')
+        .select('id, nome_completo')
+        .in('id', turmaIds);
+
+      const turmaNomeMap = new Map(
+        (turmasData ?? []).map((t: unknown) => [(t as Turma).id, (t as Turma).nome_completo]),
+      );
+
+      const enturmacaoAlunoMap = new Map(
+        enturmacoes.map((e) => [
+          e.aluno_id,
+          { turma_id: e.turma_id, ano_letivo_id: e.ano_letivo_id },
+        ]),
+      );
+
+      const ausentesSet = new Set<string>();
+      const periodosAluno = new Map<string, string[]>();
+
+      if (dataAula) {
+        const { data: ausencias } = await supabaseClient
+          .from('frequencias')
+          .select('aluno_id, periodo')
+          .in('aluno_id', alunoIds)
+          .eq('data_aula', dataAula)
+          .eq('tipo_registro', 'chamada_aula')
+          .eq('status', 'ausente')
+          .is('deleted_at', null);
+
+        for (const a of ausencias ?? []) {
+          const id = (a as unknown as { aluno_id: string }).aluno_id;
+          const p = (a as unknown as { periodo: string }).periodo;
+          ausentesSet.add(id);
+          if (!periodosAluno.has(id)) periodosAluno.set(id, []);
+          periodosAluno.get(id)!.push(p);
+        }
+      }
+
+      return alunos.map((aluno) => {
+        const ent = enturmacaoAlunoMap.get(aluno.id);
+        return {
+          id: aluno.id,
+          nome: aluno.nome,
+          matricula: aluno.matricula,
+          turma: ent ? (turmaNomeMap.get(ent.turma_id) ?? null) : null,
+          turma_id: ent?.turma_id ?? null,
+          ausente: ausentesSet.has(aluno.id),
+          periodosAusentes: periodosAluno.get(aluno.id) ?? [],
+        };
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error('[useBuscaAtiva] Erro ao buscar alunos:', msg);
@@ -119,13 +178,35 @@ export function useBuscaAtiva() {
         return { registradas: 0, erro: null };
       }
 
+      const { data: anoLetivo } = await supabaseClient
+        .from('anos_letivos')
+        .select('id')
+        .eq('ativo', true)
+        .single();
+
+      if (!anoLetivo) throw new Error('Nenhum ano letivo ativo encontrado.');
+      const anoLetivoId = (anoLetivo as unknown as { id: string }).id;
+
       const insercoes = ausentes.map((aluno) => ({
         aluno_id: aluno.id,
         professor_id: professorId,
+        turma_id: aluno.turma_id,
+        ano_letivo_id: anoLetivoId,
         data_aula: dataAula,
         periodo,
+        tipo_registro: 'chamada_aula' as const,
         status: 'ausente' as const,
       }));
+
+      const ausentesIds = ausentes.map((a) => a.id);
+      await supabaseClient
+        .from('frequencias')
+        .delete()
+        .in('aluno_id', ausentesIds)
+        .eq('data_aula', dataAula)
+        .eq('periodo', periodo)
+        .eq('tipo_registro', 'chamada_aula')
+        .is('deleted_at', null);
 
       const { error: err } = await supabaseClient.from('frequencias').insert(insercoes);
 
@@ -133,7 +214,7 @@ export function useBuscaAtiva() {
 
       return { registradas: ausentes.length, erro: null };
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = e instanceof Error ? e.message : JSON.stringify(e);
       console.error('[useBuscaAtiva] Erro ao registrar frequência:', msg);
       const mensagem = 'Falha ao registrar frequência. Tente novamente.';
       erro.value = mensagem;
@@ -152,18 +233,41 @@ export function useBuscaAtiva() {
     carregando.value = true;
     erro.value = null;
     try {
+      const { data: enturmacao } = await supabaseClient
+        .from('enturmacoes')
+        .select('turma_id, ano_letivo_id')
+        .eq('aluno_id', alunoId)
+        .eq('status', 'matriculado')
+        .single();
+
+      if (!enturmacao) throw new Error('Aluno nao encontrado em nenhuma turma.');
+      const tId = (enturmacao as unknown as { turma_id: string }).turma_id;
+      const aId = (enturmacao as unknown as { ano_letivo_id: string }).ano_letivo_id;
+
+      await supabaseClient
+        .from('frequencias')
+        .delete()
+        .eq('aluno_id', alunoId)
+        .eq('data_aula', dataAula)
+        .eq('periodo', periodo)
+        .eq('tipo_registro', 'chamada_aula')
+        .is('deleted_at', null);
+
       const { error: err } = await supabaseClient.from('frequencias').insert({
         aluno_id: alunoId,
         professor_id: professorId,
+        turma_id: tId,
+        ano_letivo_id: aId,
         data_aula: dataAula,
         periodo,
+        tipo_registro: 'chamada_aula',
         status: 'ausente',
       });
 
       if (err) throw err;
       return true;
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = e instanceof Error ? e.message : JSON.stringify(e);
       console.error('[useBuscaAtiva] Erro ao registrar ausência em período:', msg);
       erro.value = 'Falha ao registrar ausência em aula.';
       return false;

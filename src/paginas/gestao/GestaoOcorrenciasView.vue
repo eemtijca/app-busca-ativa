@@ -69,6 +69,10 @@ onUnmounted(() => {
 
 <template>
   <div class="container py-4" style="max-width: 960px">
+    <router-link to="/gestao" class="btn btn-sm btn-outline-primary me-2 mb-3">
+      <i class="bi bi-house me-1" aria-hidden="true"></i>
+      Início
+    </router-link>
     <button type="button" class="btn btn-sm btn-outline-secondary mb-3" @click="router.back()">
       <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
       Voltar

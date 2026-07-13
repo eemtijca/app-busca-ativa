@@ -144,6 +144,14 @@ async function handleLogin(): Promise<void> {
           {{ carregando ? 'Entrando...' : 'Entrar' }}
         </button>
 
+        <div class="text-center mt-3">
+          <div class="small text-body-secondary mb-2">Primeiro acesso?</div>
+          <router-link to="/solicitar-codigo" class="btn btn-outline-primary btn-sm w-100">
+            <i class="bi bi-key me-1" aria-hidden="true"></i>
+            Solicitar código de acesso
+          </router-link>
+        </div>
+
         <router-link
           v-if="recuperacaoHabilitada"
           to="/solicitar-recuperacao"

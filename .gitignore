@@ -49,3 +49,4 @@ agent-resources/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+core.*

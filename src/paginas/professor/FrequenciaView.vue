@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
 import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
@@ -15,6 +15,7 @@ const buscaAluno = ref('');
 const dataAula = ref(new Date().toISOString().slice(0, 10));
 const periodoSelecionado = ref('Dia completo');
 const mensagemSucesso = ref<string | null>(null);
+const salvando = ref(false);
 
 const periodosAula = [
   'Dia completo',
@@ -51,13 +52,15 @@ function alternarAusencia(alunoId: string) {
 }
 
 async function salvarFrequencia() {
-  if (!usuario.value) return;
+  if (!usuario.value || salvando.value) return;
+  salvando.value = true;
   const { registradas, erro: errMsg } = await registrarFrequenciaEmMassa(
     alunos.value,
     usuario.value.id,
     dataAula.value,
     periodoSelecionado.value,
   );
+  salvando.value = false;
   if (errMsg) {
     mensagemSucesso.value = errMsg;
   } else if (registradas > 0) {
@@ -68,8 +71,14 @@ async function salvarFrequencia() {
   setTimeout(() => (mensagemSucesso.value = null), 4000);
 }
 
-onMounted(async () => {
-  alunos.value = await buscarAlunosParaFrequencia();
+async function carregarAlunos() {
+  alunos.value = await buscarAlunosParaFrequencia(dataAula.value);
+}
+
+onMounted(carregarAlunos);
+
+watch(dataAula, () => {
+  carregarAlunos();
 });
 </script>
 
@@ -178,8 +187,8 @@ onMounted(async () => {
           <p class="mb-0 small">Nenhum aluno encontrado.</p>
         </div>
 
-        <div v-else class="row g-2 g-md-3">
-          <div v-for="aluno in alunosFiltrados" :key="aluno.id" class="col-12 col-md-6 col-xl-4">
+        <div v-else class="d-flex flex-column gap-2">
+          <div v-for="aluno in alunosFiltrados" :key="aluno.id" class="w-100">
             <CartaoAlunoFrequencia :aluno="aluno" @alternar="alternarAusencia" />
           </div>
         </div>

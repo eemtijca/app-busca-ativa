@@ -50,5 +50,65 @@ const nomeGestor = usuario.value?.nome || 'Gestor';
         />
       </div>
     </div>
+
+    <div class="row g-3 justify-content-center mt-2">
+      <div class="col-12 col-md-6 col-lg-4">
+        <CartaoNavegacao
+          icone="people"
+          titulo="Usuários"
+          descricao="Gerencie professores, responsáveis e perfis de acesso."
+          rota="/gestao/usuarios"
+          cor="primary"
+        />
+      </div>
+      <div class="col-12 col-md-6 col-lg-4">
+        <CartaoNavegacao
+          icone="book"
+          titulo="Alunos"
+          descricao="Cadastre e acompanhe alunos e suas turmas."
+          rota="/gestao/alunos"
+          cor="primary"
+        />
+      </div>
+      <div class="col-12 col-md-6 col-lg-4">
+        <CartaoNavegacao
+          icone="key"
+          titulo="Códigos"
+          descricao="Gerencie códigos de redefinição de senha."
+          rota="/gestao/codigos"
+          cor="warning"
+        />
+      </div>
+    </div>
+
+    <div class="row g-3 justify-content-center mt-2">
+      <div class="col-12 col-md-6 col-lg-4">
+        <CartaoNavegacao
+          icone="book"
+          titulo="Turmas"
+          descricao="Cadastre e gerencie as turmas da escola."
+          rota="/gestao/turmas"
+          cor="primary"
+        />
+      </div>
+      <div class="col-12 col-md-6 col-lg-4">
+        <CartaoNavegacao
+          icone="bookmark-star"
+          titulo="Disciplinas"
+          descricao="Cadastre as disciplinas oferecidas pela escola."
+          rota="/gestao/disciplinas"
+          cor="primary"
+        />
+      </div>
+      <div class="col-12 col-md-6 col-lg-4">
+        <CartaoNavegacao
+          icone="people"
+          titulo="Atribuições"
+          descricao="Gerencie a alocação de professores em turmas."
+          rota="/gestao/atribuicoes"
+          cor="primary"
+        />
+      </div>
+    </div>
   </div>
 </template>
