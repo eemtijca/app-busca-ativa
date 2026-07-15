@@ -1,4 +1,4 @@
-# Aplicação de Busca Ativa Escolar
+# BuscApp
 
 Repositório inicial da aplicação de comunicação em tempo real entre escola e família, concebida para o combate à evasão escolar no Ensino Médio de Tempo Integral. Projeto em fase inicial de desenvolvimento.
 
@@ -17,7 +17,7 @@ Repositório inicial da aplicação de comunicação em tempo real entre escola 
 
 ## Sobre o Projeto
 
-A Aplicação de Busca Ativa Escolar é uma proposta de solução tecnológica desenhada para automatizar e acelerar o fluxo de informações sobre a frequência e o comportamento dos estudantes. O objetivo principal da plataforma, uma vez finalizada, será permitir que a escola realize intervenções pedagógicas e de acolhimento de forma ágil, evitando o abandono escolar e fortalecendo o elo de responsabilidade entre a instituição e a família.
+O BuscApp é uma proposta de solução tecnológica desenhada para automatizar e acelerar o fluxo de informações sobre a frequência e o comportamento dos estudantes. O objetivo principal da plataforma, uma vez finalizada, será permitir que a escola realize intervenções pedagógicas e de acolhimento de forma ágil, evitando o abandono escolar e fortalecendo o elo de responsabilidade entre a instituição e a família.
 
 ## Status do Projeto
 
@@ -66,7 +66,7 @@ supabase/
 
 ## Proposta de Valor
 
-- **O que será o sistema:** Um ecossistema de comunicação em tempo real, com acesso restrito e exclusivo para pais e gestão escolar, focado 100% no combate à evasão (Busca Ativa).
+- **O que será o sistema:** Um ecossistema de comunicação em tempo real, com acesso restrito e exclusivo para pais e gestão escolar, focado 100% no combate à evasão escolar.
 - **O problema que buscará resolver:** Substituir o modelo lento de avisos em papel e reuniões tardias por notificações imediatas. Se o aluno não comparecer ou enfrentar um problema crítico, a intenção é que a família descubra no mesmo dia, permitindo agir antes que o estudante desanime ou reprove.
 - **Autoridade e Segurança:** O aplicativo blindará as informações. Os estudantes nunca terão acesso às telas, garantindo que o controle total e a autonomia fiquem estritamente nas mãos dos adultos responsáveis.
 
@@ -78,8 +78,8 @@ supabase/
 - **Foco Restrito no Comportamento Extremo:** O aplicativo removerá o monitoramento de pequenas indisciplinas diárias para evitar perseguições. O professor só poderá registrar ocorrências de comportamento extremo que realmente ameacem a permanência do aluno na escola.
 
 ### Recursos para os Admins (Direção e Coordenação)
-- **Painel Confidencial de Busca Ativa:** Tela centralizada para monitorar a frequência geral da escola e identificar desvios imediatamente.
-- **Ranking de Priorização de Risco:** Um painel interno e estritamente secreto que organizará os estudantes em uma lista, do caso mais crítico ao mais leve, com base no acúmulo de ausências, apontando quem precisa de um contato urgente da equipe de Busca Ativa.
+- **Painel Confidencial de Monitoramento:** Tela centralizada para monitorar a frequência geral da escola e identificar desvios imediatamente.
+- **Ranking de Priorização de Risco:** Um painel interno e estritamente secreto que organizará os estudantes em uma lista, do caso mais crítico ao mais leve, com base no acúmulo de ausências, apontando quem precisa de um contato urgente da equipe de monitoramento.
 - **Central de Ocorrências Graves e Suspensões:** Espaço para formalizar avisos prévios ou termos de suspensão, permitindo anexar o documento oficial digitalizado direto no sistema.
 - **Bloqueio de Retorno (Presença do Responsável):** Mecanismo que sinalizará no sistema que, após uma ocorrência grave, o estudante só poderá retornar às aulas presenciais mediante o comparecimento físico do seu responsável na escola.
 - **Validação de Justificativas:** Área para analisar, aceitar ou recusar os atestados e justificativas enviados digitalmente pelos pais.
@@ -113,13 +113,13 @@ Certifique-se de ter o [Node.js](https://nodejs.org/) instalado em seu ambiente 
 
 1. Clone este repositório:
 ```bash
-git clone https://github.com/eemtijca/app-busca-ativa.git
+git clone https://github.com/eemtijca/buscapp.git
 ```
 
 2. Acesse a pasta raiz do projeto:
 
 ```bash
-cd app-busca-ativa
+cd buscapp
 ```
 
 3. Instale todas as dependências:

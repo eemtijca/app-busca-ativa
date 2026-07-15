@@ -17,7 +17,7 @@ async function handleLogout(): Promise<void> {
 
 <template>
   <div class="d-flex flex-column overflow-hidden" style="height: 100dvh">
-    <CabecalhoNavegacao variante="dashboard" :itens="[]" marca="Busca Ativa">
+    <CabecalhoNavegacao variante="dashboard" :itens="[]" marca="BuscApp">
       <template #usuario>
         <div class="dropdown">
           <button

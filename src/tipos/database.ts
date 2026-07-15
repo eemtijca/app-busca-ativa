@@ -1,5 +1,5 @@
 // ============================================================================
-// Tipos TypeScript — Schema Completo Busca Ativa Escolar
+// Tipos TypeScript — Schema Completo BuscApp
 // Gerado a partir de supabase/migrations/0001_schema_completo.sql
 // ============================================================================
 
@@ -17,7 +17,7 @@ export type CategoriaTag = 'positivo' | 'atencao';
 export type TipoOcorrencia = 'grave' | 'suspensao';
 export type StatusOcorrencia = 'aberta' | 'em_andamento' | 'resolvida' | 'arquivada';
 export type TipoContatoBusca = 'telefone' | 'whatsapp' | 'presencial' | 'carta' | 'outro';
-export type StatusBuscaAtiva =
+export type StatusMonitoramento =
   | 'pendente'
   | 'em_andamento'
   | 'realizado'
@@ -27,7 +27,7 @@ export type StatusJustificativa = 'pendente' | 'aceita' | 'recusada';
 export type TipoNotificacao =
   | 'ausencia_portao'
   | 'ausencia_aula'
-  | 'busca_ativa'
+  | 'monitoramento'
   | 'ocorrencia'
   | 'justificativa'
   | 'mensagem'
@@ -295,12 +295,12 @@ export interface Mensagem {
   created_at: string;
 }
 
-export interface BuscaAtivaAcao {
+export interface MonitoramentoAcao {
   id: string;
   aluno_id: string;
   responsavel_id: string | null;
   tipo_contato: TipoContatoBusca;
-  status: StatusBuscaAtiva;
+  status: StatusMonitoramento;
   realizado_por: string | null;
   observacao: string | null;
   agendado_para: string | null;
@@ -504,10 +504,10 @@ export interface Database {
         Insert: Omit<Mensagem, 'id' | 'created_at'>;
         Update: Partial<Omit<Mensagem, 'id'>>;
       };
-      busca_ativa_acoes: {
-        Row: BuscaAtivaAcao;
-        Insert: Omit<BuscaAtivaAcao, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<BuscaAtivaAcao, 'id'>>;
+      monitoramento_acoes: {
+        Row: MonitoramentoAcao;
+        Insert: Omit<MonitoramentoAcao, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<MonitoramentoAcao, 'id'>>;
       };
       pontuacao_turmas: {
         Row: PontuacaoTurma;
