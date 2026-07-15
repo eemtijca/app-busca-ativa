@@ -65,7 +65,7 @@ function formatarDataHorario(iso: string): { data: string; horario: string } {
   }
 }
 
-export function useBuscaAtiva() {
+export function useMonitoramento() {
   const carregando: Ref<boolean> = ref(false);
   const erro: Ref<string | null> = ref(null);
 
@@ -97,7 +97,7 @@ export function useBuscaAtiva() {
       }));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao buscar alunos:', msg);
+      console.error('[useMonitoramento] Erro ao buscar alunos:', msg);
       erro.value = 'Não foi possível carregar a lista de alunos.';
       return [];
     } finally {
@@ -134,7 +134,7 @@ export function useBuscaAtiva() {
       return { registradas: ausentes.length, erro: null };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao registrar frequência:', msg);
+      console.error('[useMonitoramento] Erro ao registrar frequência:', msg);
       const mensagem = 'Falha ao registrar frequência. Tente novamente.';
       erro.value = mensagem;
       return { registradas: 0, erro: mensagem };
@@ -164,7 +164,7 @@ export function useBuscaAtiva() {
       return true;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao registrar ausência em período:', msg);
+      console.error('[useMonitoramento] Erro ao registrar ausência em período:', msg);
       erro.value = 'Falha ao registrar ausência em aula.';
       return false;
     } finally {
@@ -205,7 +205,7 @@ export function useBuscaAtiva() {
       return true;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao registrar ocorrência:', msg);
+      console.error('[useMonitoramento] Erro ao registrar ocorrência:', msg);
       erro.value = 'Falha ao registrar ocorrência grave.';
       return false;
     } finally {
@@ -279,7 +279,7 @@ export function useBuscaAtiva() {
       return ranking;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao buscar ranking de risco:', msg);
+      console.error('[useMonitoramento] Erro ao buscar ranking de risco:', msg);
       erro.value = 'Não foi possível carregar o ranking de risco.';
       return [];
     } finally {
@@ -329,7 +329,7 @@ export function useBuscaAtiva() {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao buscar ocorrências graves:', msg);
+      console.error('[useMonitoramento] Erro ao buscar ocorrências graves:', msg);
       erro.value = 'Não foi possível carregar as ocorrências graves.';
       return [];
     } finally {
@@ -351,7 +351,7 @@ export function useBuscaAtiva() {
       return true;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao alternar bloqueio de retorno:', msg);
+      console.error('[useMonitoramento] Erro ao alternar bloqueio de retorno:', msg);
       erro.value = 'Falha ao atualizar bloqueio de retorno.';
       return false;
     }
@@ -394,7 +394,7 @@ export function useBuscaAtiva() {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao buscar justificativas:', msg);
+      console.error('[useMonitoramento] Erro ao buscar justificativas:', msg);
       erro.value = 'Não foi possível carregar as justificativas.';
       return [];
     } finally {
@@ -420,7 +420,7 @@ export function useBuscaAtiva() {
       return true;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao validar justificativa:', msg);
+      console.error('[useMonitoramento] Erro ao validar justificativa:', msg);
       erro.value = 'Falha ao validar justificativa.';
       return false;
     }
@@ -517,7 +517,7 @@ export function useBuscaAtiva() {
       return (alunos ?? []) as unknown as Aluno[];
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao buscar filhos do responsável:', msg);
+      console.error('[useMonitoramento] Erro ao buscar filhos do responsável:', msg);
       erro.value = 'Não foi possível carregar seus filhos vinculados.';
       return [];
     } finally {
@@ -565,7 +565,7 @@ export function useBuscaAtiva() {
       };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao buscar termômetro:', msg);
+      console.error('[useMonitoramento] Erro ao buscar termômetro:', msg);
       return {
         nivel: 'baixo',
         alunoNome,
@@ -635,7 +635,7 @@ export function useBuscaAtiva() {
       return alertas.sort((a, b) => (a.data < b.data ? 1 : -1));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao buscar alertas do responsável:', msg);
+      console.error('[useMonitoramento] Erro ao buscar alertas do responsável:', msg);
       erro.value = 'Não foi possível carregar seus alertas.';
       return [];
     }
@@ -663,7 +663,7 @@ export function useBuscaAtiva() {
       return true;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao enviar justificativa:', msg);
+      console.error('[useMonitoramento] Erro ao enviar justificativa:', msg);
       erro.value = 'Falha ao enviar justificativa. Tente novamente.';
       return false;
     } finally {

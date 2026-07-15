@@ -2,13 +2,13 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
-import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
+import { useMonitoramento } from '@/composables/useMonitoramento';
 import ChatHorarioProtegido from '@/componentes/ChatHorarioProtegido.vue';
 import type { MensagemChat } from '@/tipos/componentes';
 
 const router = useRouter();
 const { usuario } = useAutenticacao();
-const { buscarMensagensChat, horarioProtegidoAtivo, obterHorarioProtegido } = useBuscaAtiva();
+const { buscarMensagensChat, horarioProtegidoAtivo, obterHorarioProtegido } = useMonitoramento();
 
 const mensagens = ref<MensagemChat[]>([]);
 const horarioAtivo = ref(false);

@@ -17,7 +17,7 @@ const nomeGestor = usuario.value?.nome || 'Gestor';
       </span>
       <h1 class="h4 fw-bold mb-1">Painel confidencial</h1>
       <p class="text-body-secondary small mb-0">
-        Bem-vindo(a), {{ nomeGestor }}. Monitore e priorize ações de busca ativa.
+        Bem-vindo(a), {{ nomeGestor }}. Monitore e priorize ações contra a evasão escolar.
       </p>
     </div>
 

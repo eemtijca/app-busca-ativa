@@ -2,7 +2,7 @@
 # https://supabase.com/docs/guides/local-development/cli/config
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "app-busca-ativa"
+project_id = "buscapp"
 
 [api]
 enabled = true
@@ -156,7 +156,7 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "https://appbuscaativa.vercel.app"
+site_url = "https://buscappjca.vercel.app"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
@@ -248,7 +248,7 @@ otp_expiry = 3600
 # sender_name = "Admin"
 
 [auth.email.template.recovery]
-subject = "Redefina sua senha - Busca Ativa Escolar"
+subject = "Redefina sua senha - BuscApp"
 content_path = "./supabase/templates/recuperacao.html"
 
 # Uncomment to customize email template
@@ -258,7 +258,7 @@ content_path = "./supabase/templates/recuperacao.html"
 
 [auth.email.notification.password_changed]
 enabled = true
-subject = "Sua senha foi alterada - Busca Ativa Escolar"
+subject = "Sua senha foi alterada - BuscApp"
 content_path = "./templates/senha_alterada_notificacao.html"
 
 [auth.sms]

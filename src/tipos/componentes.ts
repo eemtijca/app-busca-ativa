@@ -189,7 +189,7 @@ export interface JustificativaPendente {
 }
 
 /**
- * Item de estatística do Painel Confidencial de Busca Ativa.
+ * Item de estatística do Painel Confidencial de Monitoramento.
  */
 export interface EstatisticaPainel {
   id: string;

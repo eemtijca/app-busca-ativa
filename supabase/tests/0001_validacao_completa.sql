@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Test: 0001_validacao_completa
--- Projeto: Busca Ativa Escolar — EEMTI
+-- Projeto: BuscApp — EEMTI
 -- Descrição: Validação completa do schema — constraints, triggers, RLS,
 --            views e edge cases (50+ testes).
 -- Execução: npx supabase db query --file supabase/tests/<arquivo>.sql
@@ -227,7 +227,7 @@ begin
   insert into public.mensagens (conversa_id, remetente_id, conteudo, is_system_message) values (v_conv_id, v_gestao_id, 'Bom dia! Como posso ajudar?', false);
   insert into public.mensagens (conversa_id, remetente_id, conteudo, is_system_message) values (v_conv_id, v_gestao_id, 'Conversa iniciada', true);
 
-  insert into public.busca_ativa_acoes (aluno_id, responsavel_id, tipo_contato, status, observacao)
+  insert into public.monitoramento_acoes (aluno_id, responsavel_id, tipo_contato, status, observacao)
   values (v_aluno1_id, v_responsavel_id, 'telefone', 'pendente', 'Tentativa de contato');
 
   insert into public.pontuacao_turmas (turma_id, ano_letivo_id, mes_referencia, pontos_presenca, pontos_comportamento)
@@ -516,8 +516,8 @@ do $p5$
 declare
   v_count integer;
 begin
-  select count(*) into v_count from public.v_ranking_busca_ativa;
-  perform public.test_msg(format('V1: v_ranking_busca_ativa (%s linhas)', v_count), v_count >= 1);
+  select count(*) into v_count from public.v_ranking_monitoramento;
+  perform public.test_msg(format('V1: v_ranking_monitoramento (%s linhas)', v_count), v_count >= 1);
 
   select count(*) into v_count from public.v_termometro_aluno;
   perform public.test_msg(format('V2: v_termometro_aluno (%s linhas)', v_count), v_count >= 1);
