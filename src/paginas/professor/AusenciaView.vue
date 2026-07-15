@@ -2,12 +2,12 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
-import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
+import { useMonitoramento } from '@/composables/useMonitoramento';
 import type { AlunoFrequencia } from '@/tipos/componentes';
 
 const router = useRouter();
 const { usuario } = useAutenticacao();
-const { buscarAlunosParaFrequencia, registrarAusenciaEmPeriodo, carregando } = useBuscaAtiva();
+const { buscarAlunosParaFrequencia, registrarAusenciaEmPeriodo, carregando } = useMonitoramento();
 
 const alunos = ref<AlunoFrequencia[]>([]);
 const alunoId = ref('');

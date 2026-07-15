@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
+import { useMonitoramento } from '@/composables/useMonitoramento';
 import { supabaseClient } from '@/servicos/supabase';
 import FilaJustificativas from '@/componentes/FilaJustificativas.vue';
 import type { JustificativaPendente } from '@/tipos/componentes';
 
 const router = useRouter();
-const { buscarJustificativasPendentes, validarJustificativa } = useBuscaAtiva();
+const { buscarJustificativasPendentes, validarJustificativa } = useMonitoramento();
 
 let canalJustificativas: ReturnType<typeof supabaseClient.channel>;
 

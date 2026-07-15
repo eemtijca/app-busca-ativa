@@ -61,7 +61,7 @@ async function handleLogout(): Promise<void> {
     <CabecalhoNavegacao
       variante="dashboard"
       :itens="[]"
-      marca="Busca Ativa"
+      marca="BuscApp"
       :rotaMarca="usuario?.papel ? '/' + usuario.papel : '/'"
     >
       <template #usuario>

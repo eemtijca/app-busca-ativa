@@ -377,7 +377,7 @@ insert into public.notificacoes (destinatario_id, tipo, titulo, corpo, metadados
     'a0000000-0000-0000-0000-000000000001',
     'ausencia_aula',
     'Aluno com faltas críticas detectado',
-    'Pedro Henrique Lima (1º A) atingiu 5 faltas consecutivas. Recomenda-se acionar o protocolo de Busca Ativa.',
+    'Pedro Henrique Lima (1º A) atingiu 5 faltas consecutivas. Recomenda-se acionar o protocolo de monitoramento.',
     null
   ),
   (
@@ -432,9 +432,9 @@ insert into public.codigos_redefinicao (email, perfil_id, codigo, criado_por, us
   );
 
 -- ============================================================================
--- 17. BUSCA ATIVA AÇÕES
+-- 17. MONITORAMENTO AÇÕES
 -- ============================================================================
-insert into public.busca_ativa_acoes (aluno_id, responsavel_id, tipo_contato, status, realizado_por, observacao, agendado_para, realizado_em) values
+insert into public.monitoramento_acoes (aluno_id, responsavel_id, tipo_contato, status, realizado_por, observacao, agendado_para, realizado_em) values
   (
     'e0000000-0000-0000-0000-000000000003',
     'a0000000-0000-0000-0000-000000000005',

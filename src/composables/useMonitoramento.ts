@@ -22,13 +22,6 @@ import type {
   HorarioProtegido,
 } from '@/tipos/componentes';
 
-/**
- * Calcula o nível de risco com base em ausências e ocorrências.
- * Regras de negócio (alinhadas ao README):
- *   - alto (crítico): >= 5 ausências OU >= 1 ocorrência grave/suspensão
- *   - medio (atenção): 3-4 ausências
- *   - baixo (estável): 0-2 ausências
- */
 function calcularNivelRisco(totalAusencias: number, totalOcorrencias: number): NivelRisco {
   if (totalAusencias >= 5 || totalOcorrencias >= 1) return 'alto';
   if (totalAusencias >= 3) return 'medio';
@@ -66,17 +59,10 @@ function formatarDataHorario(iso: string): { data: string; horario: string } {
   }
 }
 
-export function useBuscaAtiva() {
+export function useMonitoramento() {
   const carregando: Ref<boolean> = ref(false);
   const erro: Ref<string | null> = ref(null);
 
-  /**
-   * buscarAlunosParaFrequencia - Busca a lista de alunos para o
-   * professor registrar frequência por exceção. Não filtra por
-   * professor específico (a RLS do Supabase garante que o
-   * professor só veja alunos das turmas que lecione). Se dataAula for
-   * informada, busca registros existentes de ausencia para pre-marcar.
-   */
   async function buscarAlunosParaFrequencia(dataAula?: string): Promise<AlunoFrequencia[]> {
     carregando.value = true;
     erro.value = null;
@@ -156,7 +142,7 @@ export function useBuscaAtiva() {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao buscar alunos:', msg);
+      console.error('[useMonitoramento] Erro ao buscar alunos:', msg);
       erro.value = 'Não foi possível carregar a lista de alunos.';
       return [];
     } finally {
@@ -215,7 +201,7 @@ export function useBuscaAtiva() {
       return { registradas: ausentes.length, erro: null };
     } catch (e) {
       const msg = e instanceof Error ? e.message : JSON.stringify(e);
-      console.error('[useBuscaAtiva] Erro ao registrar frequência:', msg);
+      console.error('[useMonitoramento] Erro ao registrar frequência:', msg);
       const mensagem = 'Falha ao registrar frequência. Tente novamente.';
       erro.value = mensagem;
       return { registradas: 0, erro: mensagem };
@@ -268,7 +254,7 @@ export function useBuscaAtiva() {
       return true;
     } catch (e) {
       const msg = e instanceof Error ? e.message : JSON.stringify(e);
-      console.error('[useBuscaAtiva] Erro ao registrar ausência em período:', msg);
+      console.error('[useMonitoramento] Erro ao registrar ausência em período:', msg);
       erro.value = 'Falha ao registrar ausência em aula.';
       return false;
     } finally {
@@ -309,7 +295,7 @@ export function useBuscaAtiva() {
       return true;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao registrar ocorrência:', msg);
+      console.error('[useMonitoramento] Erro ao registrar ocorrência:', msg);
       erro.value = 'Falha ao registrar ocorrência grave.';
       return false;
     } finally {
@@ -372,7 +358,6 @@ export function useBuscaAtiva() {
         };
       });
 
-      // Ordena: crítico primeiro, depois por total de ausências
       const ordemNivel: Record<NivelRisco, number> = { alto: 0, medio: 1, baixo: 2 };
       ranking.sort((a, b) => {
         const diffNivel = ordemNivel[a.nivel] - ordemNivel[b.nivel];
@@ -383,7 +368,7 @@ export function useBuscaAtiva() {
       return ranking;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao buscar ranking de risco:', msg);
+      console.error('[useMonitoramento] Erro ao buscar ranking de risco:', msg);
       erro.value = 'Não foi possível carregar o ranking de risco.';
       return [];
     } finally {
@@ -395,7 +380,6 @@ export function useBuscaAtiva() {
     carregando.value = true;
     erro.value = null;
     try {
-      // Busca ocorrências com join implícito em alunos via duas queries
       const { data: ocoData, error: err } = await supabaseClient
         .from('ocorrencias')
         .select('*')
@@ -433,7 +417,7 @@ export function useBuscaAtiva() {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao buscar ocorrências graves:', msg);
+      console.error('[useMonitoramento] Erro ao buscar ocorrências graves:', msg);
       erro.value = 'Não foi possível carregar as ocorrências graves.';
       return [];
     } finally {
@@ -455,7 +439,7 @@ export function useBuscaAtiva() {
       return true;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao alternar bloqueio de retorno:', msg);
+      console.error('[useMonitoramento] Erro ao alternar bloqueio de retorno:', msg);
       erro.value = 'Falha ao atualizar bloqueio de retorno.';
       return false;
     }
@@ -498,7 +482,7 @@ export function useBuscaAtiva() {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao buscar justificativas:', msg);
+      console.error('[useMonitoramento] Erro ao buscar justificativas:', msg);
       erro.value = 'Não foi possível carregar as justificativas.';
       return [];
     } finally {
@@ -524,15 +508,12 @@ export function useBuscaAtiva() {
       return true;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao validar justificativa:', msg);
+      console.error('[useMonitoramento] Erro ao validar justificativa:', msg);
       erro.value = 'Falha ao validar justificativa.';
       return false;
     }
   }
 
-  /**
-   * Estatísticas do Painel Confidencial a partir de listas já carregadas.
-   */
   function calcularEstatisticasPainel(
     ranking: AlunoRisco[],
     ocorrencias: OcorrenciaGrave[],
@@ -621,7 +602,7 @@ export function useBuscaAtiva() {
       return (alunos ?? []) as unknown as Aluno[];
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao buscar filhos do responsável:', msg);
+      console.error('[useMonitoramento] Erro ao buscar filhos do responsável:', msg);
       erro.value = 'Não foi possível carregar seus filhos vinculados.';
       return [];
     } finally {
@@ -669,7 +650,7 @@ export function useBuscaAtiva() {
       };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao buscar termômetro:', msg);
+      console.error('[useMonitoramento] Erro ao buscar termômetro:', msg);
       return {
         nivel: 'baixo',
         alunoNome,
@@ -739,7 +720,7 @@ export function useBuscaAtiva() {
       return alertas.sort((a, b) => (a.data < b.data ? 1 : -1));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao buscar alertas do responsável:', msg);
+      console.error('[useMonitoramento] Erro ao buscar alertas do responsável:', msg);
       erro.value = 'Não foi possível carregar seus alertas.';
       return [];
     }
@@ -767,7 +748,7 @@ export function useBuscaAtiva() {
       return true;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useBuscaAtiva] Erro ao enviar justificativa:', msg);
+      console.error('[useMonitoramento] Erro ao enviar justificativa:', msg);
       erro.value = 'Falha ao enviar justificativa. Tente novamente.';
       return false;
     } finally {
@@ -775,17 +756,7 @@ export function useBuscaAtiva() {
     }
   }
 
-  /**
-   * buscarMensagensChat - Busca o histórico de mensagens do
-   * canal de diálogo. Como a tabela atual não possui uma tabela
-   * de mensagens, retorna [] em produção até que seja migrada.
-   *
-   * NOTA: Em uma versão futura, criar tabela `mensagens_chat`
-   * com RLS para que cada responsável veja apenas suas mensagens.
-   */
   async function buscarMensagensChat(_responsavelId: string): Promise<MensagemChat[]> {
-    // Tabela ainda não existe no schema. Retorna lista vazia
-    // para que o componente exiba o estado "sem mensagens".
     return [];
   }
 

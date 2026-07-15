@@ -65,9 +65,7 @@ async function handleLogin(): Promise<void> {
             style="font-size: 2.5rem; color: var(--bs-primary)"
             aria-hidden="true"
           ></i>
-          <span class="fw-semibold text-body-secondary" style="font-size: 1.75rem">
-            Busca Ativa
-          </span>
+          <span class="fw-semibold text-body-secondary" style="font-size: 1.75rem"> BuscApp </span>
         </div>
 
         <h1 class="h4 mb-3 fw-normal text-center">Entrar</h1>

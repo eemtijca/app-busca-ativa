@@ -2,14 +2,14 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
-import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
+import { useMonitoramento } from '@/composables/useMonitoramento';
 import TermometroRisco from '@/componentes/TermometroRisco.vue';
 import type { Aluno } from '@/tipos/database';
 import type { TermometroAtencao } from '@/tipos/componentes';
 
 const router = useRouter();
 const { usuario } = useAutenticacao();
-const { buscarFilhosDoResponsavel, buscarTermometroAluno } = useBuscaAtiva();
+const { buscarFilhosDoResponsavel, buscarTermometroAluno } = useMonitoramento();
 
 const filhos = ref<Aluno[]>([]);
 const filhoSelecionado = ref<Aluno | null>(null);

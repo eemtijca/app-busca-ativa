@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Migration: 0001_schema_completo
--- Projeto: Busca Ativa Escolar — EEMTI
+-- Projeto: BuscApp — EEMTI
 -- Descrição: Schema completo e definitivo com 25+ tabelas, RLS, views,
 --            triggers, índices, JWT hook e pre-request enforcement.
 -- Substitui: 0001_schema_inicial.sql, concessao_permissoes_api.sql,
@@ -28,9 +28,9 @@ create type public.categoria_tag as enum ('positivo', 'atencao');
 create type public.tipo_ocorrencia as enum ('grave', 'suspensao');
 create type public.status_ocorrencia as enum ('aberta', 'em_andamento', 'resolvida', 'arquivada');
 create type public.tipo_contato_busca as enum ('telefone', 'whatsapp', 'presencial', 'carta', 'outro');
-create type public.status_busca_ativa as enum ('pendente', 'em_andamento', 'realizado', 'sem_contato', 'cancelado');
+create type public.status_monitoramento as enum ('pendente', 'em_andamento', 'realizado', 'sem_contato', 'cancelado');
 create type public.status_justificativa as enum ('pendente', 'aceita', 'recusada');
-create type public.tipo_notificacao as enum ('ausencia_portao', 'ausencia_aula', 'busca_ativa', 'ocorrencia', 'justificativa', 'mensagem', 'sistema');
+create type public.tipo_notificacao as enum ('ausencia_portao', 'ausencia_aula', 'monitoramento', 'ocorrencia', 'justificativa', 'mensagem', 'sistema');
 create type public.status_importacao as enum ('processando', 'concluido', 'parcial', 'falhou');
 create type public.status_exportacao as enum ('agendada', 'processando', 'concluida', 'falhou');
 create type public.papel_atribuicao as enum ('titular', 'substituto');
@@ -445,15 +445,15 @@ create table public.mensagens (
 comment on table public.mensagens is 'RF26/RF27: Mensagens textuais. client_request_id para idempotência offline. Bloqueio anti-burnout via trigger.';
 
 -- ============================================================================
--- 10. TABELAS — BUSCA ATIVA E GAMIFICAÇÃO
+-- 10. TABELAS — MONITORAMENTO E GAMIFICAÇÃO
 -- ============================================================================
 
-create table public.busca_ativa_acoes (
+create table public.monitoramento_acoes (
   id               uuid                 primary key default gen_random_uuid(),
   aluno_id         uuid                 not null references public.alunos(id) on delete cascade,
   responsavel_id   uuid                 references public.perfis(id) on delete set null,
   tipo_contato     tipo_contato_busca   not null,
-  status           status_busca_ativa   not null default 'pendente',
+  status           status_monitoramento   not null default 'pendente',
   realizado_por    uuid                 references public.perfis(id) on delete set null,
   observacao       text,
   agendado_para    timestamptz,
@@ -462,7 +462,7 @@ create table public.busca_ativa_acoes (
   updated_at       timestamptz          not null default now()
 );
 
-comment on table public.busca_ativa_acoes is 'RF12: Log de ações de Busca Ativa (telefonemas, WhatsApp, visitas).';
+comment on table public.monitoramento_acoes is 'RF12: Log de ações de monitoramento (telefonemas, WhatsApp, visitas).';
 
 create table public.pontuacao_turmas (
   id                  uuid        primary key default gen_random_uuid(),
@@ -590,7 +590,7 @@ begin
     'enturmacoes', 'vinculos_responsaveis', 'atribuicoes_professores',
     'tags_comportamento', 'frequencias', 'registros_comportamento',
     'ocorrencias', 'anexos', 'justificativas_faltas', 'conversas',
-    'mensagens', 'busca_ativa_acoes', 'pontuacao_turmas',
+    'mensagens', 'monitoramento_acoes', 'pontuacao_turmas',
     'importacoes_log', 'exportacoes', 'convites'
   ])
   loop
@@ -781,7 +781,7 @@ alter table public.ocorrencias                 enable row level security;
 alter table public.justificativas_faltas       enable row level security;
 alter table public.conversas                   enable row level security;
 alter table public.mensagens                   enable row level security;
-alter table public.busca_ativa_acoes           enable row level security;
+alter table public.monitoramento_acoes enable row level security;
 alter table public.pontuacao_turmas            enable row level security;
 alter table public.notificacoes                enable row level security;
 alter table public.importacoes_log             enable row level security;
@@ -1357,17 +1357,17 @@ create policy "Msg: marca lida"
   with check (lida_em is not null);
 
 -- ============================================================================
--- 18.22 BUSCA ATIVA AÇÕES
+-- 18.22 MONITORAMENTO AÇÕES
 -- ============================================================================
 
-create policy "Busca: gestao tudo"
-  on public.busca_ativa_acoes for all
+create policy "Monitoramento: gestao tudo"
+  on public.monitoramento_acoes for all
   to authenticated
   using (public.get_user_papel() = 'gestao')
   with check (public.get_user_papel() = 'gestao');
 
-create policy "Busca: leitura ampla"
-  on public.busca_ativa_acoes for select
+create policy "Monitoramento: leitura ampla"
+  on public.monitoramento_acoes for select
   to authenticated
   using (true);
 
@@ -1443,8 +1443,8 @@ create policy "Convites: gestao tudo"
 -- 19. VIEWS (com security_invoker = true para não bypassar RLS)
 -- ============================================================================
 
--- 19.1 Ranking de Busca Ativa (RF12)
-create or replace view public.v_ranking_busca_ativa
+-- 19.1 Ranking de Monitoramento (RF12)
+create or replace view public.v_ranking_monitoramento
 with (security_invoker = true)
 as
 with faltas_aluno as (
@@ -1480,14 +1480,14 @@ select
    join public.perfis p on p.id = vr.responsavel_id
    where vr.aluno_id = fa.aluno_id and vr.ativo and p.telefone is not null
   ) as telefones_responsaveis,
-  (select count(*) from public.busca_ativa_acoes ba
+  (select count(*) from public.monitoramento_acoes ba
    where ba.aluno_id = fa.aluno_id and ba.status = 'pendente'
   ) as acoes_pendentes
 from faltas_aluno fa
 cross join public.configuracoes_sistema cs
 order by fa.faltas_totais desc;
 
-comment on view public.v_ranking_busca_ativa is 'RF12: Fila de priorização de risco. Alunos que atingiram limite crítico de infrequência.';
+comment on view public.v_ranking_monitoramento is 'RF12: Fila de priorização de risco. Alunos que atingiram limite crítico de infrequência.';
 
 -- 19.2 Termômetro do Aluno (verde/amarelo/vermelho)
 create or replace view public.v_termometro_aluno
@@ -1688,9 +1688,9 @@ create index idx_mensagens_conversa on public.mensagens (conversa_id, created_at
 create index idx_mensagens_remetente on public.mensagens (remetente_id);
 create index idx_mensagens_nao_lidas on public.mensagens (conversa_id) where lida_em is null;
 
--- Busca Ativa
-create index idx_busca_aluno on public.busca_ativa_acoes (aluno_id);
-create index idx_busca_status on public.busca_ativa_acoes (status) where status in ('pendente', 'em_andamento');
+-- Monitoramento
+create index idx_monitoramento_aluno on public.monitoramento_acoes (aluno_id);
+create index idx_monitoramento_status on public.monitoramento_acoes (status) where status in ('pendente', 'em_andamento');
 
 -- Gamificação
 create index idx_pontuacao_ranking on public.pontuacao_turmas (ano_letivo_id, mes_referencia, pontos_total desc);
@@ -1726,7 +1726,7 @@ grant insert, update on public.conversas to authenticated;
 grant insert, update on public.mensagens to authenticated;
 grant insert on public.anexos to authenticated;
 grant insert on public.ocorrencia_anexos to authenticated;
-grant insert, update on public.busca_ativa_acoes to authenticated;
+grant insert, update on public.monitoramento_acoes to authenticated;
 grant insert, update on public.perfis to authenticated;
 grant insert, update on public.alunos to authenticated;
 grant insert, update on public.vinculos_responsaveis to authenticated;

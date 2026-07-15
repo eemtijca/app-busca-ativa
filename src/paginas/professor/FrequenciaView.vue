@@ -2,13 +2,13 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
-import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
+import { useMonitoramento } from '@/composables/useMonitoramento';
 import CartaoAlunoFrequencia from '@/componentes/CartaoAlunoFrequencia.vue';
 import type { AlunoFrequencia } from '@/tipos/componentes';
 
 const router = useRouter();
 const { usuario } = useAutenticacao();
-const { buscarAlunosParaFrequencia, registrarFrequenciaEmMassa, carregando } = useBuscaAtiva();
+const { buscarAlunosParaFrequencia, registrarFrequenciaEmMassa, carregando } = useMonitoramento();
 
 const alunos = ref<AlunoFrequencia[]>([]);
 const buscaAluno = ref('');

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
+import { useMonitoramento } from '@/composables/useMonitoramento';
 import { supabaseClient } from '@/servicos/supabase';
 import ListaOcorrencias from '@/componentes/ListaOcorrencias.vue';
 import type { OcorrenciaGrave } from '@/tipos/componentes';
 
 const router = useRouter();
-const { buscarOcorrenciasGraves, alternarBloqueioRetorno } = useBuscaAtiva();
+const { buscarOcorrenciasGraves, alternarBloqueioRetorno } = useMonitoramento();
 
 let canalOcorrencias: ReturnType<typeof supabaseClient.channel>;
 

@@ -2,13 +2,13 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
-import { useBuscaAtiva } from '@/composables/useBuscaAtiva';
+import { useMonitoramento } from '@/composables/useMonitoramento';
 import FormularioJustificativa from '@/componentes/FormularioJustificativa.vue';
 import type { Aluno } from '@/tipos/database';
 
 const router = useRouter();
 const { usuario } = useAutenticacao();
-const { buscarFilhosDoResponsavel, enviarJustificativa } = useBuscaAtiva();
+const { buscarFilhosDoResponsavel, enviarJustificativa } = useMonitoramento();
 
 const filhos = ref<Aluno[]>([]);
 const filhoSelecionado = ref<Aluno | null>(null);
