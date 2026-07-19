@@ -200,7 +200,7 @@ export function useMonitoramento() {
 
       return { registradas: ausentes.length, erro: null };
     } catch (e) {
-      const msg = e instanceof Error ? e.message : JSON.stringify(e);
+      const msg = e instanceof Error ? e.message : String(e);
       console.error('[useMonitoramento] Erro ao registrar frequência:', msg);
       const mensagem = 'Falha ao registrar frequência. Tente novamente.';
       erro.value = mensagem;
@@ -253,7 +253,7 @@ export function useMonitoramento() {
       if (err) throw err;
       return true;
     } catch (e) {
-      const msg = e instanceof Error ? e.message : JSON.stringify(e);
+      const msg = e instanceof Error ? e.message : String(e);
       console.error('[useMonitoramento] Erro ao registrar ausência em período:', msg);
       erro.value = 'Falha ao registrar ausência em aula.';
       return false;
