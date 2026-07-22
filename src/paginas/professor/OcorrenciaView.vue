@@ -80,6 +80,9 @@ async function confirmar() {
     descricao.value.trim(),
     tipoSelecionado,
     exigePresenca.value,
+    tags.value,
+    notificarCoordenacao.value,
+    notificarResponsavel.value,
   );
   if (ok) {
     router.back();

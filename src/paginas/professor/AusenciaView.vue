@@ -67,6 +67,8 @@ async function confirmar() {
       usuario.value.id,
       dataAula.value,
       periodo,
+      justificativa.value.trim() || undefined,
+      motivos.value.length ? motivos.value : undefined,
     );
     if (!ok) {
       mensagemErro.value = `Falha ao registrar ausência no ${periodo}. Tente novamente.`;

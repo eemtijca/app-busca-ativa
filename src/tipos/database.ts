@@ -193,6 +193,7 @@ export interface Frequencia {
   periodo: string;
   status: StatusFrequencia;
   observacao: string | null;
+  motivos_ausencia: string[];
   client_request_id: string | null;
   deleted_at: string | null;
   created_at: string;
@@ -230,6 +231,9 @@ export interface Ocorrencia {
   tipo: TipoOcorrencia;
   status: StatusOcorrencia;
   exige_presenca_responsavel: boolean;
+  tags_comportamento: string[];
+  notificar_coordenacao: boolean;
+  notificar_responsavel: boolean;
   presenca_responsavel_confirmada: boolean;
   data_confirmacao_presenca: string | null;
   data_ocorrencia: string;

@@ -68,7 +68,9 @@ async function salvarFrequencia() {
     alunos.value,
     usuario.value.id,
     dataAula.value,
-    periodosSelecionados.value.includes('Dia completo') ? 'Dia completo' : periodosSelecionados.value.join(', '),
+    periodosSelecionados.value.includes('Dia completo')
+      ? ['1º Horário', '2º Horário', '3º Horário', '4º Horário', 'Manhã', 'Tarde']
+      : periodosSelecionados.value,
   );
   salvando.value = false;
   if (errMsg) {
