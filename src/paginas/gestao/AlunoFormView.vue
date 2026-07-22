@@ -344,6 +344,7 @@ onMounted(async () => {
 });
 
 async function salvar() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   if (!nome.value.trim()) {
     mostrarErro('O campo nome é obrigatório.');
     return;

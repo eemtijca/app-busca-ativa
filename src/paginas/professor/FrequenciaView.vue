@@ -62,6 +62,7 @@ function alternarAusencia(alunoId: string) {
 }
 
 async function salvarFrequencia() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   if (!usuario.value || salvando.value) return;
   salvando.value = true;
   const { registradas, erro: errMsg } = await registrarFrequenciaEmMassa(

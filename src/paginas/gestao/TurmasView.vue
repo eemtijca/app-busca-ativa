@@ -83,6 +83,7 @@ function abrirNovo() {
 }
 
 async function salvar() {
+  document.querySelector('.modal-body')?.scrollTo({ top: 0, behavior: 'smooth' });
   carregando.value = true;
   try {
     if (modoEdicao.value && editandoId.value) {

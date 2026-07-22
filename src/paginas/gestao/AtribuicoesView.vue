@@ -141,6 +141,7 @@ function abrirNovo() {
 }
 
 async function salvar() {
+  document.querySelector('.modal-body')?.scrollTo({ top: 0, behavior: 'smooth' });
   if (!formProfessorId.value || !formTurmaId.value || !formDataInicio.value) {
     mostrarErro('Preencha os campos obrigatórios.');
     return;

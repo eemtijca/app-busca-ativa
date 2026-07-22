@@ -83,6 +83,7 @@ function abrirNovo() {
 }
 
 async function salvar() {
+  document.querySelector('.modal-body')?.scrollTo({ top: 0, behavior: 'smooth' });
   if (!formNome.value.trim()) {
     mostrarErro('O campo nome é obrigatório.');
     return;
