@@ -95,6 +95,8 @@ export interface Perfil {
   telefone: string | null;
   cargo: string | null;
   notificacoes_ativas: boolean;
+  acesso_modulos: string[];
+  permissoes: string[];
   status: StatusPerfil;
   ultimo_acesso_em: string | null;
   created_at: string;
@@ -122,6 +124,10 @@ export interface Aluno {
   observacoes: string | null;
   data_nascimento: string | null;
   data_matricula: string | null;
+  transporte_escolar: boolean;
+  alimentacao_diferenciada: boolean;
+  necessidades_especiais: boolean;
+  documentos_recebidos: string[];
   created_at: string;
   updated_at: string;
 }

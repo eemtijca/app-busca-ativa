@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabaseClient } from '@/servicos/supabase';
+import CampoFormulario from '@/componentes/CampoFormulario.vue';
 import type { Turma, SerieTurma, LetraTurma } from '@/tipos/database';
 
 const router = useRouter();
@@ -256,24 +257,21 @@ onMounted(carregarTurmas);
           </div>
           <form @submit.prevent="salvar">
             <div class="modal-body">
-              <div class="mb-3">
-                <label for="campoSerie" class="form-label small fw-medium">Série</label>
+              <CampoFormulario id="campoSerie" label="Série" :obrigatorio="true">
                 <select id="campoSerie" v-model="formSerie" class="form-select form-select-sm">
                   <option value="1º">1º</option>
                   <option value="2º">2º</option>
                   <option value="3º">3º</option>
                 </select>
-              </div>
-              <div class="mb-3">
-                <label for="campoLetra" class="form-label small fw-medium">Letra</label>
+              </CampoFormulario>
+              <CampoFormulario id="campoLetra" label="Letra" :obrigatorio="true">
                 <select id="campoLetra" v-model="formLetra" class="form-select form-select-sm">
                   <option value="A">A</option>
                   <option value="B">B</option>
                   <option value="C">C</option>
                 </select>
-              </div>
-              <div class="mb-3">
-                <label for="campoCapacidade" class="form-label small fw-medium">Capacidade</label>
+              </CampoFormulario>
+              <CampoFormulario id="campoCapacidade" label="Capacidade">
                 <input
                   id="campoCapacidade"
                   v-model.number="formCapacidade"
@@ -282,7 +280,7 @@ onMounted(carregarTurmas);
                   class="form-control form-control-sm"
                   autocomplete="off"
                 />
-              </div>
+              </CampoFormulario>
               <div class="mb-0">
                 <div class="form-check">
                   <input

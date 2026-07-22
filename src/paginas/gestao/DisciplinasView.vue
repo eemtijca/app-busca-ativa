@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabaseClient } from '@/servicos/supabase';
+import CampoFormulario from '@/componentes/CampoFormulario.vue';
 import type { Disciplina } from '@/tipos/database';
 
 const router = useRouter();
@@ -250,8 +251,7 @@ onMounted(carregarDisciplinas);
           </div>
           <form @submit.prevent="salvar">
             <div class="modal-body">
-              <div class="mb-3">
-                <label for="campoNome" class="form-label small fw-medium">Nome</label>
+              <CampoFormulario id="campoNome" label="Nome" :obrigatorio="true">
                 <input
                   id="campoNome"
                   v-model="formNome"
@@ -260,9 +260,8 @@ onMounted(carregarDisciplinas);
                   required
                   autocomplete="off"
                 />
-              </div>
-              <div class="mb-3">
-                <label for="campoCodigoSige" class="form-label small fw-medium">Código SIGE</label>
+              </CampoFormulario>
+              <CampoFormulario id="campoCodigoSige" label="Código SIGE">
                 <input
                   id="campoCodigoSige"
                   v-model="formCodigoSige"
@@ -270,11 +269,8 @@ onMounted(carregarDisciplinas);
                   class="form-control form-control-sm"
                   autocomplete="off"
                 />
-              </div>
-              <div class="mb-3">
-                <label for="campoCargaHoraria" class="form-label small fw-medium"
-                  >Carga horária</label
-                >
+              </CampoFormulario>
+              <CampoFormulario id="campoCargaHoraria" label="Carga horária">
                 <input
                   id="campoCargaHoraria"
                   v-model.number="formCargaHoraria"
@@ -283,7 +279,7 @@ onMounted(carregarDisciplinas);
                   class="form-control form-control-sm"
                   autocomplete="off"
                 />
-              </div>
+              </CampoFormulario>
               <div class="mb-0">
                 <div class="form-check">
                   <input

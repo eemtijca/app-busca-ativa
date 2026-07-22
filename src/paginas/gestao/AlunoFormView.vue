@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { useGestaoUsuarios } from '@/composables/useGestaoUsuarios';
 import { supabaseClient } from '@/servicos/supabase';
+import CampoFormulario from '@/componentes/CampoFormulario.vue';
+import GrupoCheckbox from '@/componentes/GrupoCheckbox.vue';
 import type { Turma, Enturmacao, VinculoResponsavel } from '@/tipos/database';
 
 const route = useRoute();
@@ -23,25 +25,37 @@ const status = ref('ativo');
 const turmaId = ref('');
 const turmas = ref<Turma[]>([]);
 
+const transporteEscolar = ref(false);
+const alimentacaoDiferenciada = ref(false);
+const necessidadesEspeciais = ref(false);
+const documentosRecebidos = ref<string[]>([]);
+
+const opcoesDocumentos = [
+  { valor: 'rg', rotulo: 'RG', icone: 'person-vcard' },
+  { valor: 'cpf', rotulo: 'CPF', icone: 'credit-card' },
+  { valor: 'certidao_nascimento', rotulo: 'Certidão de Nascimento', icone: 'file-earmark-text' },
+  { valor: 'comprovante_residencia', rotulo: 'Comprovante de Residência', icone: 'house' },
+  { valor: 'cartao_vacina', rotulo: 'Cartão de Vacina', icone: 'heart-pulse' },
+  { valor: 'nis', rotulo: 'NIS', icone: 'person-badge' },
+];
+
 const vinculoTipo = ref<'existente' | 'novo'>('existente');
 const responsavelEmail = ref('');
 const responsavelNome = ref('');
 const responsavelTelefone = ref('');
 const tipoVinculo = ref('outro');
 
+const formDirty = ref(false);
 const salvando = ref(false);
 const mensagemErro = ref<string | null>(null);
 
-// Enturmação atual (edit mode)
 const enturmacaoAtual = ref<Enturmacao | null>(null);
 const turmaAtualNome = ref('');
 
-// Alterar enturmação
 const alterarEnturmacao = ref(false);
 const novaTurmaId = ref('');
 const novaDataMatricula = ref('');
 
-// Responsáveis vinculados
 const vinculos = ref<
   (VinculoResponsavel & { responsavel_nome?: string; responsavel_email?: string })[]
 >([]);
@@ -51,6 +65,24 @@ const novoRespEmail = ref('');
 const novoRespNome = ref('');
 const novoRespTelefone = ref('');
 const novoTipoVinculo = ref('outro');
+
+const contadorObservacoes = computed(() => observacoes.value.length);
+
+onBeforeRouteLeave((_to, _from, next) => {
+  if (formDirty.value && !salvando.value) {
+    const confirmar = window.confirm('Há alterações não salvas. Deseja realmente sair?');
+    if (!confirmar) return next(false);
+  }
+  next();
+});
+
+watch(
+  [nome, matricula, codigoInep, observacoes, documentosRecebidos, transporteEscolar, alimentacaoDiferenciada, necessidadesEspeciais],
+  () => {
+    if (!formDirty.value) formDirty.value = true;
+  },
+  { deep: true },
+);
 
 function hoje() {
   return new Date().toISOString().slice(0, 10);
@@ -236,12 +268,16 @@ onMounted(async () => {
     }
     const { data: alunoFull } = await supabaseClient
       .from('alunos')
-      .select('codigo_inep, data_matricula')
+      .select('codigo_inep, data_matricula, transporte_escolar, alimentacao_diferenciada, necessidades_especiais, documentos_recebidos')
       .eq('id', id)
       .single();
     if (alunoFull) {
       codigoInep.value = alunoFull.codigo_inep ?? '';
       if (alunoFull.data_matricula) dataMatricula.value = alunoFull.data_matricula.slice(0, 10);
+      transporteEscolar.value = alunoFull.transporte_escolar ?? false;
+      alimentacaoDiferenciada.value = alunoFull.alimentacao_diferenciada ?? false;
+      necessidadesEspeciais.value = alunoFull.necessidades_especiais ?? false;
+      documentosRecebidos.value = alunoFull.documentos_recebidos ?? [];
     }
     await Promise.all([carregarEnturmacao(), carregarVinculos()]);
   } else {
@@ -260,19 +296,24 @@ async function salvar() {
   }
   salvando.value = true;
   try {
+    const dadosExtras = {
+      codigo_inep: codigoInep.value.trim() || undefined,
+      data_nascimento: dataNascimento.value || undefined,
+      data_matricula: dataMatricula.value || undefined,
+      observacoes: observacoes.value.trim() || undefined,
+      transporte_escolar: transporteEscolar.value,
+      alimentacao_diferenciada: alimentacaoDiferenciada.value,
+      necessidades_especiais: necessidadesEspeciais.value,
+      documentos_recebidos: documentosRecebidos.value,
+    } as Record<string, unknown>;
+
     if (modoEdicao.value && alunoId.value) {
       const ok = await atualizarAluno(alunoId.value, {
         nome: nome.value.trim(),
         matricula: matricula.value.trim(),
         status: status.value,
-        codigo_inep: codigoInep.value.trim() || undefined,
-        data_nascimento: dataNascimento.value || undefined,
-        data_matricula: dataMatricula.value || undefined,
-        observacoes: observacoes.value.trim() || undefined,
-      } as Parameters<typeof atualizarAluno>[1] & {
-        codigo_inep?: string;
-        data_matricula?: string;
-      });
+        ...dadosExtras,
+      } as Parameters<typeof atualizarAluno>[1] & typeof dadosExtras);
       if (ok) {
         router.push('/gestao/alunos');
       } else {
@@ -295,9 +336,13 @@ async function salvar() {
             }),
       });
       if (id) {
-        const updates: Record<string, string | null> = {};
+        const updates: Record<string, unknown> = {};
         if (codigoInep.value.trim()) updates.codigo_inep = codigoInep.value.trim();
         if (dataMatricula.value) updates.data_matricula = dataMatricula.value;
+        updates.transporte_escolar = transporteEscolar.value;
+        updates.alimentacao_diferenciada = alimentacaoDiferenciada.value;
+        updates.necessidades_especiais = necessidadesEspeciais.value;
+        updates.documentos_recebidos = documentosRecebidos.value;
         if (Object.keys(updates).length) {
           await supabaseClient.from('alunos').update(updates).eq('id', id);
         }
@@ -342,8 +387,7 @@ async function salvar() {
           <span class="fw-medium small">Dados do aluno</span>
         </div>
         <div class="card-body">
-          <div class="mb-3">
-            <label for="campoNome" class="form-label small fw-medium">Nome</label>
+          <CampoFormulario id="campoNome" label="Nome" :obrigatorio="true">
             <input
               id="campoNome"
               v-model="nome"
@@ -352,9 +396,9 @@ async function salvar() {
               required
               autocomplete="off"
             />
-          </div>
-          <div class="mb-3">
-            <label for="campoMatricula" class="form-label small fw-medium">Matrícula</label>
+          </CampoFormulario>
+
+          <CampoFormulario id="campoMatricula" label="Matrícula" :obrigatorio="true">
             <input
               id="campoMatricula"
               v-model="matricula"
@@ -363,9 +407,9 @@ async function salvar() {
               required
               autocomplete="off"
             />
-          </div>
-          <div class="mb-3">
-            <label for="campoCodigoInep" class="form-label small fw-medium">Código INEP</label>
+          </CampoFormulario>
+
+          <CampoFormulario id="campoCodigoInep" label="Código INEP">
             <input
               id="campoCodigoInep"
               v-model="codigoInep"
@@ -373,9 +417,9 @@ async function salvar() {
               class="form-control form-control-sm"
               autocomplete="off"
             />
-          </div>
-          <div class="mb-3">
-            <label for="campoDataNasc" class="form-label small fw-medium">Data de nascimento</label>
+          </CampoFormulario>
+
+          <CampoFormulario id="campoDataNasc" label="Data de nascimento">
             <input
               id="campoDataNasc"
               v-model="dataNascimento"
@@ -383,11 +427,9 @@ async function salvar() {
               class="form-control form-control-sm"
               autocomplete="off"
             />
-          </div>
-          <div class="mb-3">
-            <label for="campoDataMatricula" class="form-label small fw-medium"
-              >Data de matrícula</label
-            >
+          </CampoFormulario>
+
+          <CampoFormulario id="campoDataMatricula" label="Data de matrícula">
             <input
               id="campoDataMatricula"
               v-model="dataMatricula"
@@ -395,16 +437,89 @@ async function salvar() {
               class="form-control form-control-sm"
               autocomplete="off"
             />
-          </div>
-          <div class="mb-0">
-            <label for="campoObservacoes" class="form-label small fw-medium">Observações</label>
+          </CampoFormulario>
+
+          <CampoFormulario
+            id="campoObservacoes"
+            label="Observações"
+            :maxlength="1000"
+            :contador="contadorObservacoes"
+          >
             <textarea
               id="campoObservacoes"
               v-model="observacoes"
               class="form-control form-control-sm"
               rows="2"
+              maxlength="1000"
               autocomplete="off"
             ></textarea>
+          </CampoFormulario>
+        </div>
+      </div>
+
+      <div class="card border mb-3">
+        <div class="card-header bg-body-tertiary py-2">
+          <span class="fw-medium small">Documentos recebidos</span>
+        </div>
+        <div class="card-body">
+          <CampoFormulario
+            id="documentos"
+            label="Marque os documentos já entregues pelo aluno"
+            dica="Apenas para controle interno da secretaria"
+          >
+            <GrupoCheckbox
+              nome="doc"
+              :opcoes="opcoesDocumentos"
+              :modelo="documentosRecebidos"
+              :colunas="2"
+              @update:modelo="documentosRecebidos = $event"
+            />
+          </CampoFormulario>
+        </div>
+      </div>
+
+      <div class="card border mb-3">
+        <div class="card-header bg-body-tertiary py-2">
+          <span class="fw-medium small">Indicadores</span>
+        </div>
+        <div class="card-body">
+          <div class="d-flex gap-4 flex-wrap">
+            <div class="form-check">
+              <input
+                id="campoTransporte"
+                v-model="transporteEscolar"
+                type="checkbox"
+                class="form-check-input"
+              />
+              <label class="form-check-label small fw-medium" for="campoTransporte">
+                <i class="bi bi-bus-front me-1" aria-hidden="true"></i>
+                Transporte escolar
+              </label>
+            </div>
+            <div class="form-check">
+              <input
+                id="campoAlimentacao"
+                v-model="alimentacaoDiferenciada"
+                type="checkbox"
+                class="form-check-input"
+              />
+              <label class="form-check-label small fw-medium" for="campoAlimentacao">
+                <i class="bi bi-cup-hot me-1" aria-hidden="true"></i>
+                Alimentação diferenciada
+              </label>
+            </div>
+            <div class="form-check">
+              <input
+                id="campoNecessidades"
+                v-model="necessidadesEspeciais"
+                type="checkbox"
+                class="form-check-input"
+              />
+              <label class="form-check-label small fw-medium" for="campoNecessidades">
+                <i class="bi bi-universal-access me-1" aria-hidden="true"></i>
+                Necessidades especiais
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -414,13 +529,12 @@ async function salvar() {
           <span class="fw-medium small">Enturmação</span>
         </div>
         <div class="card-body">
-          <div class="mb-0">
-            <label for="campoTurma" class="form-label small fw-medium">Turma</label>
+          <CampoFormulario id="campoTurma" label="Turma">
             <select id="campoTurma" v-model="turmaId" class="form-select form-select-sm">
               <option value="">Selecione uma turma</option>
               <option v-for="t in turmas" :key="t.id" :value="t.id">{{ t.nome_completo }}</option>
             </select>
-          </div>
+          </CampoFormulario>
         </div>
       </div>
 
@@ -456,10 +570,7 @@ async function salvar() {
             </div>
           </div>
 
-          <div class="mb-3">
-            <label for="campoRespEmail" class="form-label small fw-medium"
-              >E-mail do responsável</label
-            >
+          <CampoFormulario id="campoRespEmail" label="E-mail do responsável">
             <input
               id="campoRespEmail"
               v-model="responsavelEmail"
@@ -467,13 +578,10 @@ async function salvar() {
               class="form-control form-control-sm"
               autocomplete="off"
             />
-          </div>
+          </CampoFormulario>
 
           <template v-if="vinculoTipo === 'novo'">
-            <div class="mb-3">
-              <label for="campoRespNome" class="form-label small fw-medium"
-                >Nome do responsável</label
-              >
+            <CampoFormulario id="campoRespNome" label="Nome do responsável">
               <input
                 id="campoRespNome"
                 v-model="responsavelNome"
@@ -481,9 +589,8 @@ async function salvar() {
                 class="form-control form-control-sm"
                 autocomplete="off"
               />
-            </div>
-            <div class="mb-3">
-              <label for="campoRespTelefone" class="form-label small fw-medium">Telefone</label>
+            </CampoFormulario>
+            <CampoFormulario id="campoRespTelefone" label="Telefone">
               <input
                 id="campoRespTelefone"
                 v-model="responsavelTelefone"
@@ -491,11 +598,8 @@ async function salvar() {
                 class="form-control form-control-sm"
                 autocomplete="off"
               />
-            </div>
-            <div class="mb-0">
-              <label for="campoTipoVinculo" class="form-label small fw-medium"
-                >Tipo de vínculo</label
-              >
+            </CampoFormulario>
+            <CampoFormulario id="campoTipoVinculo" label="Tipo de vínculo">
               <select
                 id="campoTipoVinculo"
                 v-model="tipoVinculo"
@@ -508,7 +612,7 @@ async function salvar() {
                 <option value="irmao">Irmão/Irmã</option>
                 <option value="outro">Outro</option>
               </select>
-            </div>
+            </CampoFormulario>
           </template>
         </div>
       </div>
@@ -518,14 +622,14 @@ async function salvar() {
           <span class="fw-medium small">Status</span>
         </div>
         <div class="card-body">
-          <div class="mb-0">
+          <CampoFormulario id="campoStatusAluno" label="Status">
             <select v-model="status" class="form-select form-select-sm">
               <option value="ativo">Ativo</option>
               <option value="egresso">Egresso</option>
               <option value="transferido">Transferido</option>
               <option value="inativo">Inativo</option>
             </select>
-          </div>
+          </CampoFormulario>
         </div>
       </div>
 
@@ -553,17 +657,13 @@ async function salvar() {
           </button>
 
           <div v-if="alterarEnturmacao" class="border rounded p-3 mt-2 bg-body-tertiary">
-            <div class="mb-3">
-              <label for="campoNovaTurma" class="form-label small fw-medium">Nova turma</label>
+            <CampoFormulario id="campoNovaTurma" label="Nova turma">
               <select id="campoNovaTurma" v-model="novaTurmaId" class="form-select form-select-sm">
                 <option value="">Selecione uma turma</option>
                 <option v-for="t in turmas" :key="t.id" :value="t.id">{{ t.nome_completo }}</option>
               </select>
-            </div>
-            <div class="mb-3">
-              <label for="campoNovaDataMat" class="form-label small fw-medium"
-                >Data matrícula</label
-              >
+            </CampoFormulario>
+            <CampoFormulario id="campoNovaDataMat" label="Data matrícula">
               <input
                 id="campoNovaDataMat"
                 v-model="novaDataMatricula"
@@ -571,7 +671,7 @@ async function salvar() {
                 class="form-control form-control-sm"
                 autocomplete="off"
               />
-            </div>
+            </CampoFormulario>
             <div class="d-flex gap-2 justify-content-end">
               <button
                 type="button"
@@ -663,10 +763,7 @@ async function salvar() {
               </div>
             </div>
 
-            <div class="mb-3">
-              <label for="campoNovoRespEmail" class="form-label small fw-medium"
-                >E-mail do responsável</label
-              >
+            <CampoFormulario id="campoNovoRespEmail" label="E-mail do responsável">
               <input
                 id="campoNovoRespEmail"
                 v-model="novoRespEmail"
@@ -674,11 +771,10 @@ async function salvar() {
                 class="form-control form-control-sm"
                 autocomplete="off"
               />
-            </div>
+            </CampoFormulario>
 
             <template v-if="novoRespTipo === 'novo'">
-              <div class="mb-3">
-                <label for="campoNovoRespNome" class="form-label small fw-medium">Nome</label>
+              <CampoFormulario id="campoNovoRespNome" label="Nome">
                 <input
                   id="campoNovoRespNome"
                   v-model="novoRespNome"
@@ -686,11 +782,8 @@ async function salvar() {
                   class="form-control form-control-sm"
                   autocomplete="off"
                 />
-              </div>
-              <div class="mb-3">
-                <label for="campoNovoRespTelefone" class="form-label small fw-medium"
-                  >Telefone</label
-                >
+              </CampoFormulario>
+              <CampoFormulario id="campoNovoRespTelefone" label="Telefone">
                 <input
                   id="campoNovoRespTelefone"
                   v-model="novoRespTelefone"
@@ -698,11 +791,8 @@ async function salvar() {
                   class="form-control form-control-sm"
                   autocomplete="off"
                 />
-              </div>
-              <div class="mb-3">
-                <label for="campoNovoTipoVinculo" class="form-label small fw-medium"
-                  >Tipo de vínculo</label
-                >
+              </CampoFormulario>
+              <CampoFormulario id="campoNovoTipoVinculo" label="Tipo de vínculo">
                 <select
                   id="campoNovoTipoVinculo"
                   v-model="novoTipoVinculo"
@@ -715,7 +805,7 @@ async function salvar() {
                   <option value="irmao">Irmão/Irmã</option>
                   <option value="outro">Outro</option>
                 </select>
-              </div>
+              </CampoFormulario>
             </template>
 
             <div class="d-flex gap-2 justify-content-end">

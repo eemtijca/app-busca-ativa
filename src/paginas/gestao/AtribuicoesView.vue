@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabaseClient } from '@/servicos/supabase';
+import CampoFormulario from '@/componentes/CampoFormulario.vue';
 import type {
   AtribuicaoProfessor,
   Perfil,
@@ -319,8 +320,7 @@ onMounted(carregarDados);
           </div>
           <form @submit.prevent="salvar">
             <div class="modal-body">
-              <div class="mb-3">
-                <label for="campoProfessor" class="form-label small fw-medium">Professor</label>
+              <CampoFormulario id="campoProfessor" label="Professor" :obrigatorio="true">
                 <select
                   id="campoProfessor"
                   v-model="formProfessorId"
@@ -330,9 +330,8 @@ onMounted(carregarDados);
                   <option value="">Selecione um professor</option>
                   <option v-for="p in professores" :key="p.id" :value="p.id">{{ p.nome }}</option>
                 </select>
-              </div>
-              <div class="mb-3">
-                <label for="campoTurma" class="form-label small fw-medium">Turma</label>
+              </CampoFormulario>
+              <CampoFormulario id="campoTurma" label="Turma" :obrigatorio="true">
                 <select
                   id="campoTurma"
                   v-model="formTurmaId"
@@ -344,9 +343,8 @@ onMounted(carregarDados);
                     {{ t.nome_completo }}
                   </option>
                 </select>
-              </div>
-              <div class="mb-3">
-                <label for="campoDisciplina" class="form-label small fw-medium">Disciplina</label>
+              </CampoFormulario>
+              <CampoFormulario id="campoDisciplina" label="Disciplina">
                 <select
                   id="campoDisciplina"
                   v-model="formDisciplinaId"
@@ -355,16 +353,14 @@ onMounted(carregarDados);
                   <option value="">Selecione uma disciplina</option>
                   <option v-for="d in disciplinas" :key="d.id" :value="d.id">{{ d.nome }}</option>
                 </select>
-              </div>
-              <div class="mb-3">
-                <label for="campoPapel" class="form-label small fw-medium">Papel</label>
+              </CampoFormulario>
+              <CampoFormulario id="campoPapel" label="Papel" :obrigatorio="true">
                 <select id="campoPapel" v-model="formPapel" class="form-select form-select-sm">
                   <option value="titular">Titular</option>
                   <option value="substituto">Substituto</option>
                 </select>
-              </div>
-              <div class="mb-3">
-                <label for="campoDataInicio" class="form-label small fw-medium">Data início</label>
+              </CampoFormulario>
+              <CampoFormulario id="campoDataInicio" label="Data início" :obrigatorio="true">
                 <input
                   id="campoDataInicio"
                   v-model="formDataInicio"
@@ -373,9 +369,8 @@ onMounted(carregarDados);
                   required
                   autocomplete="off"
                 />
-              </div>
-              <div class="mb-3">
-                <label for="campoDataFim" class="form-label small fw-medium">Data fim</label>
+              </CampoFormulario>
+              <CampoFormulario id="campoDataFim" label="Data fim">
                 <input
                   id="campoDataFim"
                   v-model="formDataFim"
@@ -383,7 +378,7 @@ onMounted(carregarDados);
                   class="form-control form-control-sm"
                   autocomplete="off"
                 />
-              </div>
+              </CampoFormulario>
               <div class="mb-0">
                 <div class="form-check">
                   <input
