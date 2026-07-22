@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
 import { useMonitoramento } from '@/composables/useMonitoramento';
+import CampoFormulario from '@/componentes/CampoFormulario.vue';
+import GrupoCheckbox from '@/componentes/GrupoCheckbox.vue';
+import CartaoSelecao from '@/componentes/CartaoSelecao.vue';
 import type { AlunoFrequencia } from '@/tipos/componentes';
 
 const router = useRouter();
@@ -11,25 +14,71 @@ const { buscarAlunosParaFrequencia, registrarOcorrenciaGrave, carregando } = use
 
 const alunos = ref<AlunoFrequencia[]>([]);
 const alunoId = ref('');
-const tipo = ref<'grave' | 'suspensao'>('grave');
+const tipos = ref<string[]>(['grave']);
+const tags = ref<string[]>([]);
 const descricao = ref('');
 const exigePresenca = ref(false);
+const notificarCoordenacao = ref(true);
+const notificarResponsavel = ref(false);
 const mensagemErro = ref<string | null>(null);
+
+const opcoesTipo = [
+  { valor: 'grave', rotulo: 'Ocorrência grave', icone: 'exclamation-triangle' },
+  { valor: 'suspensao', rotulo: 'Suspensão', icone: 'shield-exclamation' },
+];
+
+const opcoesTags = [
+  { valor: 'agressao_verbal', rotulo: 'Agressão verbal', icone: 'chat-quote' },
+  { valor: 'agressao_fisica', rotulo: 'Agressão física', icone: 'hand-index' },
+  { valor: 'desacato', rotulo: 'Desacato', icone: 'person-fill-exclamation' },
+  { valor: 'dano_patrimonio', rotulo: 'Dano ao patrimônio', icone: 'building-dash' },
+  { valor: 'bullying', rotulo: 'Bullying', icone: 'people-fill' },
+  { valor: 'descumprimento_regras', rotulo: 'Descumprimento de regras', icone: 'file-earmark-x' },
+  { valor: 'saida_nao_autorizada', rotulo: 'Saída não autorizada', icone: 'door-open' },
+];
+
+const rotuloTipo = computed(() => {
+  if (tipos.value.includes('suspensao')) return 'suspensão';
+  if (tipos.value.includes('grave')) return 'ocorrência grave';
+  return 'ocorrência';
+});
+
+const descricaoSugerida = computed(() => {
+  if (!tags.value.length) return '';
+  const nomes = tags.value.map((t) => opcoesTags.find((o) => o.valor === t)?.rotulo ?? t);
+  return `Relato de ${rotuloTipo.value}: ${nomes.join(', ')}. `;
+});
+
+const contadorDescricao = computed(() => descricao.value.length);
+
+function aplicarTags() {
+  if (!descricao.value.startsWith('Relato de')) {
+    descricao.value = descricaoSugerida.value;
+  } else {
+    const resto = descricao.value.split('. ').slice(1).join('. ');
+    descricao.value = descricaoSugerida.value + resto;
+  }
+}
 
 async function confirmar() {
   if (!usuario.value || !alunoId.value) {
     mensagemErro.value = 'Selecione um aluno.';
     return;
   }
+  if (!tipos.value.length) {
+    mensagemErro.value = 'Selecione o tipo de ocorrência.';
+    return;
+  }
   if (descricao.value.trim().length < 10) {
     mensagemErro.value = 'Descreva a ocorrência com pelo menos 10 caracteres.';
     return;
   }
+  const tipoSelecionado = tipos.value.includes('suspensao') ? 'suspensao' : 'grave';
   const ok = await registrarOcorrenciaGrave(
     alunoId.value,
     usuario.value.id,
     descricao.value.trim(),
-    tipo.value,
+    tipoSelecionado,
     exigePresenca.value,
   );
   if (ok) {
@@ -76,8 +125,7 @@ onMounted(async () => {
 
     <div class="card border">
       <div class="card-body">
-        <div class="mb-3">
-          <label for="alunoSelect" class="form-label fw-medium small">Aluno</label>
+        <CampoFormulario id="alunoSelect" label="Aluno" :obrigatorio="true">
           <select
             id="alunoSelect"
             v-model="alunoId"
@@ -89,55 +137,104 @@ onMounted(async () => {
               {{ a.nome }} — {{ a.turma || 'Sem turma' }}
             </option>
           </select>
-        </div>
+        </CampoFormulario>
 
-        <div class="mb-3">
-          <label class="form-label fw-medium small">Tipo de ocorrência</label>
-          <div class="d-flex gap-3">
-            <div class="form-check">
-              <input
-                id="tipoGrave"
-                v-model="tipo"
-                type="radio"
-                value="grave"
-                class="form-check-input"
-              />
-              <label for="tipoGrave" class="form-check-label small">Ocorrência grave</label>
-            </div>
-            <div class="form-check">
-              <input
-                id="tipoSuspensao"
-                v-model="tipo"
-                type="radio"
-                value="suspensao"
-                class="form-check-input"
-              />
-              <label for="tipoSuspensao" class="form-check-label small">Suspensão</label>
-            </div>
+        <CampoFormulario id="tipoOcorrencia" label="Tipo de ocorrência" :obrigatorio="true">
+          <div class="d-flex gap-2">
+            <CartaoSelecao
+              v-for="op in opcoesTipo"
+              :key="op.valor"
+              :selecionado="tipos.includes(op.valor)"
+              :variante="op.valor === 'suspensao' ? 'danger' : 'warning'"
+              @click="
+                tipos = tipos.includes(op.valor)
+                  ? tipos.filter((t) => t !== op.valor)
+                  : [...tipos, op.valor]
+              "
+            >
+              <i :class="`bi bi-${op.icone} me-1`" aria-hidden="true"></i>
+              {{ op.rotulo }}
+            </CartaoSelecao>
           </div>
-        </div>
+        </CampoFormulario>
 
-        <div class="mb-3">
-          <label for="descricaoText" class="form-label fw-medium small">Descrição</label>
+        <CampoFormulario
+          id="tagsComportamento"
+          label="Tags de comportamento (preenchimento rápido)"
+          dica="Selecione para compor a descrição automaticamente"
+        >
+          <GrupoCheckbox
+            nome="tag"
+            :opcoes="opcoesTags"
+            :modelo="tags"
+            :colunas="2"
+            @update:modelo="
+              (v) => {
+                tags = v;
+                aplicarTags();
+              }
+            "
+          />
+        </CampoFormulario>
+
+        <CampoFormulario
+          id="descricaoText"
+          label="Descrição"
+          :obrigatorio="true"
+          :maxlength="1000"
+          :contador="contadorDescricao"
+        >
           <textarea
             id="descricaoText"
             v-model="descricao"
             class="form-control form-control-sm"
+            :class="{ 'is-invalid': mensagemErro && descricao.trim().length < 10 }"
             rows="4"
             placeholder="Descreva objetivamente o comportamento. Mínimo 10 caracteres."
+            maxlength="1000"
           ></textarea>
-        </div>
+        </CampoFormulario>
 
-        <div class="form-check mb-3">
-          <input
-            id="exigePresenca"
-            v-model="exigePresenca"
-            type="checkbox"
-            class="form-check-input"
-          />
-          <label for="exigePresenca" class="form-check-label small">
-            Exigir presença do responsável na escola antes do retorno
-          </label>
+        <div class="mb-3">
+          <label class="form-label small fw-medium">Notificações</label>
+          <div class="d-flex gap-3 flex-wrap">
+            <div class="form-check">
+              <input
+                id="notifCoordenacao"
+                v-model="notificarCoordenacao"
+                type="checkbox"
+                class="form-check-input"
+              />
+              <label for="notifCoordenacao" class="form-check-label small">
+                <i class="bi bi-megaphone me-1" aria-hidden="true"></i>
+                Notificar coordenação
+              </label>
+            </div>
+            <div class="form-check">
+              <input
+                id="notifResponsavel"
+                v-model="notificarResponsavel"
+                type="checkbox"
+                class="form-check-input"
+              />
+              <label for="notifResponsavel" class="form-check-label small">
+                <i class="bi bi-person-badge me-1" aria-hidden="true"></i>
+                Notificar responsável
+              </label>
+            </div>
+            <div class="form-check">
+              <input
+                id="exigePresenca"
+                v-model="exigePresenca"
+                type="checkbox"
+                class="form-check-input"
+              />
+              <label for="exigePresenca" class="form-check-label small">
+                <i class="bi bi-house-door me-1" aria-hidden="true"></i>
+                Exigir presença do responsável na escola
+              </label>
+            </div>
+          </div>
         </div>
 
         <div class="d-flex gap-2 justify-content-end">

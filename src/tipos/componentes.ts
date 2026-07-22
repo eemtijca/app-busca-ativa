@@ -316,6 +316,16 @@ export interface DadosCriacaoUsuario {
 }
 
 /**
+ * Opcao para GrupoCheckbox.
+ */
+export interface OpcaoCheckbox {
+  valor: string;
+  rotulo: string;
+  icone?: string;
+  desabilitado?: boolean;
+}
+
+/**
  * Dados para criacao de aluno.
  */
 export interface DadosCriacaoAluno {

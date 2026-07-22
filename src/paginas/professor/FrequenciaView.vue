@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
 import { useMonitoramento } from '@/composables/useMonitoramento';
 import CartaoAlunoFrequencia from '@/componentes/CartaoAlunoFrequencia.vue';
+import GrupoCheckbox from '@/componentes/GrupoCheckbox.vue';
 import type { AlunoFrequencia } from '@/tipos/componentes';
 
 const router = useRouter();
@@ -13,18 +14,18 @@ const { buscarAlunosParaFrequencia, registrarFrequenciaEmMassa, carregando } = u
 const alunos = ref<AlunoFrequencia[]>([]);
 const buscaAluno = ref('');
 const dataAula = ref(new Date().toISOString().slice(0, 10));
-const periodoSelecionado = ref('Dia completo');
+const periodosSelecionados = ref<string[]>(['Dia completo']);
 const mensagemSucesso = ref<string | null>(null);
 const salvando = ref(false);
 
-const periodosAula = [
-  'Dia completo',
-  '1º Horário',
-  '2º Horário',
-  '3º Horário',
-  '4º Horário',
-  'Manhã',
-  'Tarde',
+const opcoesPeriodos = [
+  { valor: 'Dia completo', rotulo: 'Dia completo', icone: 'calendar-check' },
+  { valor: '1º Horário', rotulo: '1º Horário' },
+  { valor: '2º Horário', rotulo: '2º Horário' },
+  { valor: '3º Horário', rotulo: '3º Horário' },
+  { valor: '4º Horário', rotulo: '4º Horário' },
+  { valor: 'Manhã', rotulo: 'Manhã', icone: 'sun' },
+  { valor: 'Tarde', rotulo: 'Tarde', icone: 'sunset' },
 ];
 
 const alunosFiltrados = computed(() => {
@@ -40,6 +41,15 @@ const alunosFiltrados = computed(() => {
 
 const totalAusentesMarcados = computed(() => alunos.value.filter((a) => a.ausente).length);
 const totalAlunos = computed(() => alunos.value.length);
+const todosAusentes = computed(() => alunos.value.every((a) => a.ausente));
+
+function alternarTodos() {
+  const novoValor = !todosAusentes.value;
+  alunos.value.forEach((a) => {
+    a.ausente = novoValor;
+    if (!novoValor) a.periodosAusentes = [];
+  });
+}
 
 function alternarAusencia(alunoId: string) {
   const aluno = alunos.value.find((a) => a.id === alunoId);
@@ -58,7 +68,7 @@ async function salvarFrequencia() {
     alunos.value,
     usuario.value.id,
     dataAula.value,
-    periodoSelecionado.value,
+    periodosSelecionados.value.includes('Dia completo') ? 'Dia completo' : periodosSelecionados.value.join(', '),
   );
   salvando.value = false;
   if (errMsg) {
@@ -116,17 +126,6 @@ watch(dataAula, () => {
             class="form-control form-control-sm"
             style="width: 150px"
           />
-          <label for="periodoAula" class="col-form-label col-form-label-sm text-body-secondary mb-0"
-            >Período</label
-          >
-          <select
-            id="periodoAula"
-            v-model="periodoSelecionado"
-            class="form-select form-select-sm"
-            style="width: 150px"
-          >
-            <option v-for="p in periodosAula" :key="p" :value="p">{{ p }}</option>
-          </select>
         </div>
       </div>
 
@@ -144,18 +143,44 @@ watch(dataAula, () => {
           {{ mensagemSucesso }}
         </div>
 
+        <div class="mb-3">
+          <label class="form-label small fw-medium mb-2">Períodos</label>
+          <GrupoCheckbox
+            nome="periodoFreq"
+            :opcoes="opcoesPeriodos"
+            :modelo="periodosSelecionados"
+            :colunas="4"
+            @update:modelo="periodosSelecionados = $event"
+          />
+        </div>
+
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-          <div class="input-group input-group-sm" style="max-width: 280px">
-            <span class="input-group-text bg-body-tertiary">
-              <i class="bi bi-search" aria-hidden="true"></i>
-            </span>
-            <input
-              v-model="buscaAluno"
-              type="search"
-              class="form-control"
-              placeholder="Buscar aluno"
-              aria-label="Buscar alunos"
-            />
+          <div class="d-flex gap-2 align-items-center">
+            <div class="input-group input-group-sm" style="max-width: 280px">
+              <span class="input-group-text bg-body-tertiary">
+                <i class="bi bi-search" aria-hidden="true"></i>
+              </span>
+              <input
+                v-model="buscaAluno"
+                type="search"
+                class="form-control"
+                placeholder="Buscar aluno"
+                aria-label="Buscar alunos"
+              />
+            </div>
+            <div class="form-check mb-0">
+              <input
+                id="alternarTodos"
+                :checked="todosAusentes && totalAlunos > 0"
+                type="checkbox"
+                class="form-check-input"
+                :indeterminate="totalAusentesMarcados > 0 && !todosAusentes"
+                @change="alternarTodos"
+              />
+              <label class="form-check-label small" for="alternarTodos">
+                {{ todosAusentes ? 'Desmarcar todos' : 'Marcar todos' }}
+              </label>
+            </div>
           </div>
           <div class="d-flex gap-2">
             <span class="badge text-bg-success"
