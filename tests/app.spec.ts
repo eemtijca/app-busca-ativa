@@ -1,6 +1,42 @@
 import { test, expect, type Page } from '@playwright/test';
+import { spawn } from 'child_process';
 
 const URL_SUPABASE = process.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321';
+
+let funcoesProcess: ReturnType<typeof spawn> | null = null;
+
+test.beforeAll(async () => {
+  try {
+    const res = await fetch(`${URL_SUPABASE}/functions/v1/solicitar-codigo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'health@check.com' }),
+    });
+    if (res.ok) return;
+  } catch { /* not running */ }
+
+  funcoesProcess = spawn('npx', ['supabase', 'functions', 'serve'], {
+    stdio: 'pipe',
+    shell: true,
+  });
+
+  for (let i = 0; i < 30; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    try {
+      const res = await fetch(`${URL_SUPABASE}/functions/v1/solicitar-codigo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'health@check.com' }),
+      });
+      if (res.ok) return;
+    } catch { /* still starting */ }
+  }
+  throw new Error('Edge functions nao iniciaram apos 60s');
+});
+
+test.afterAll(() => {
+  if (funcoesProcess) funcoesProcess.kill();
+});
 
 async function login(page: Page, email: string, password: string) {
   await page.goto('/');
@@ -14,15 +50,6 @@ async function login(page: Page, email: string, password: string) {
     page.click('button[type="submit"]'),
   ]);
   await page.waitForTimeout(1000);
-}
-
-async function chamaEdgeFunction(nome: string, corpo: object) {
-  const res = await fetch(`${URL_SUPABASE}/functions/v1/${nome}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(corpo),
-  });
-  return res.json();
 }
 
 test.describe('Autenticacao', () => {
@@ -153,11 +180,11 @@ test.describe('Recuperacao de senha por codigo', () => {
     await expect(page.locator('input[type="email"]')).toBeVisible();
   });
 
-  test('CT16 - Solicitacao de codigo via edge function retorna sucesso', async () => {
-    const resultado = await chamaEdgeFunction('solicitar-codigo', {
-      email: 'prof1@escola.edu.br',
-    });
-    expect(resultado.success).toBe(true);
+  test('CT16 - Fluxo de solicitacao de codigo via UI', async ({ page }) => {
+    await page.goto('/solicitar-codigo');
+    await page.fill('input[type="email"]', 'prof1@escola.edu.br');
+    await page.click('button[type="submit"]');
+    await expect(page.getByText('Solicitação enviada com sucesso!')).toBeVisible({ timeout: 15000 });
   });
 
   test('CT17 - Pagina de redefinir senha com codigo carrega', async ({ page }) => {
