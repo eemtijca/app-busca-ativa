@@ -473,3 +473,123 @@ test.describe('Gestao - Codigos - Mobile', () => {
     await expect(page.locator('.nav-link.active')).toContainText('Solicitações');
   });
 });
+
+test.describe('Professor - Ocorrencia com tags', () => {
+  test('CT56 - Formulario de ocorrencia carrega com checkboxes de tags', async ({ page }) => {
+    await login(page, 'prof1@escola.edu.br', 'Prof123!');
+    await page.goto('/professor/ocorrencia');
+    await expect(page.getByText('Registrar ocorrência grave')).toBeVisible();
+    await expect(page.locator('select').first()).toBeVisible();
+    await expect(page.locator('input[type="checkbox"]').first()).toBeVisible();
+    await expect(page.getByText('Agressão verbal')).toBeVisible();
+    await expect(page.getByText('Notificar coordenação')).toBeVisible();
+  });
+
+  test('CT57 - Selecionar tag preenche descricao automaticamente', async ({ page }) => {
+    await login(page, 'prof1@escola.edu.br', 'Prof123!');
+    await page.goto('/professor/ocorrencia');
+    await page.locator('#tag-agressao_verbal').check();
+    await expect(page.locator('#descricaoText')).toHaveValue(/Relato/);
+  });
+});
+
+test.describe('Professor - Ausencia com multisselecao', () => {
+  test('CT58 - Formulario de ausencia tem checkboxes de periodo', async ({ page }) => {
+    await login(page, 'prof1@escola.edu.br', 'Prof123!');
+    await page.goto('/professor/ausencia');
+    await expect(page.getByText('Registrar ausência em aula')).toBeVisible();
+    await expect(page.locator('input[type="checkbox"]').first()).toBeVisible();
+    await expect(page.getByText('1º Horário')).toBeVisible();
+    await expect(page.getByText('Enfermaria')).toBeVisible();
+  });
+
+  test('CT59 - Selecionar multiplos periodos habilita botao', async ({ page }) => {
+    await login(page, 'prof1@escola.edu.br', 'Prof123!');
+    await page.goto('/professor/ausencia');
+    await page.getByText('1º Horário').first().click();
+    await page.getByText('2º Horário').first().click();
+    await expect(page.getByText('Registrar 2 períodos')).toBeVisible();
+  });
+});
+
+test.describe('Gestao - Usuario - Modulos e permissoes', () => {
+  test('CT60 - Formulario de usuario tem modulos de acesso', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/usuarios/novo');
+    await page.waitForSelector('form');
+    await expect(page.locator('text=Módulos de acesso')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#modulo-frequencia')).toBeVisible();
+    await expect(page.locator('#modulo-ocorrencias')).toBeVisible();
+    await expect(page.locator('#permissao-exportar')).toBeVisible();
+  });
+
+  test('CT61 - Modulos de acesso sao selecionaveis', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/usuarios/novo');
+    await page.locator('#modulo-ocorrencias').check();
+    await page.locator('#modulo-chat').check();
+    await expect(page.locator('#modulo-ocorrencias')).toBeChecked();
+    await expect(page.locator('#modulo-chat')).toBeChecked();
+  });
+});
+
+test.describe('Gestao - Aluno - Documentos e indicadores', () => {
+  test('CT62 - Formulario de aluno tem documentos e indicadores', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/alunos/novo');
+    await expect(page.getByText('Documentos recebidos')).toBeVisible();
+    await expect(page.getByText('Transporte escolar')).toBeVisible();
+    await expect(page.getByText('Alimentação diferenciada')).toBeVisible();
+    await expect(page.getByText('Necessidades especiais')).toBeVisible();
+    await expect(page.locator('#doc-rg')).toBeVisible();
+    await expect(page.locator('#doc-cpf')).toBeVisible();
+  });
+
+  test('CT63 - Documentos sao selecionaveis', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/alunos/novo');
+    await page.locator('#doc-rg').check();
+    await page.locator('#doc-cpf').check();
+    await expect(page.locator('#doc-rg')).toBeChecked();
+    await expect(page.locator('#doc-cpf')).toBeChecked();
+  });
+});
+
+test.describe('Gestao - Turmas - Modal', () => {
+  test('CT64 - Modal de criar turma abre e tem campos', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/turmas');
+    await page.click('button:has-text("Nova turma")');
+    await expect(page.locator('.modal-title')).toContainText('Nova turma');
+    await expect(page.locator('#campoSerie')).toBeVisible();
+    await expect(page.locator('#campoLetra')).toBeVisible();
+    await expect(page.locator('#campoAtivo')).toBeVisible();
+    await page.click('button:has-text("Cancelar")');
+  });
+});
+
+test.describe('Gestao - Disciplinas - Modal', () => {
+  test('CT65 - Modal de criar disciplina abre e tem campos', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/disciplinas');
+    await page.click('button:has-text("Nova disciplina")');
+    await expect(page.locator('.modal-title')).toContainText('Nova disciplina');
+    await expect(page.locator('#campoNome')).toBeVisible();
+    await expect(page.locator('#campoCodigoSige')).toBeVisible();
+    await expect(page.locator('#campoCargaHoraria')).toBeVisible();
+    await page.click('button:has-text("Cancelar")');
+  });
+});
+
+test.describe('Gestao - Atribuicoes - Modal', () => {
+  test('CT66 - Modal de criar atribuicao abre e tem campos', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/atribuicoes');
+    await page.click('button:has-text("Nova atribuição")');
+    await expect(page.locator('.modal-title')).toContainText('Nova atribuição');
+    await expect(page.locator('#campoProfessor')).toBeVisible();
+    await expect(page.locator('#campoTurma')).toBeVisible();
+    await expect(page.locator('#campoDataInicio')).toBeVisible();
+    await page.click('button:has-text("Cancelar")');
+  });
+});

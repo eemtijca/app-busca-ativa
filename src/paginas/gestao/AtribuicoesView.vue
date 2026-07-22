@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { onMounted, ref, watch } from 'vue';
+import { useRouter, onBeforeRouteLeave } from 'vue-router';
 import { supabaseClient } from '@/servicos/supabase';
 import CampoFormulario from '@/componentes/CampoFormulario.vue';
 import type {
@@ -38,6 +38,20 @@ const formPapel = ref<PapelAtribuicao>('titular');
 const formDataInicio = ref('');
 const formDataFim = ref('');
 const formAtivo = ref(true);
+const formDirty = ref(false);
+
+onBeforeRouteLeave((_to, _from, next) => {
+  if (formDirty.value && modalAberto.value && !carregando.value) {
+    const confirmar = window.confirm('Há alterações não salvas. Deseja realmente sair?');
+    if (!confirmar) return next(false);
+  }
+  next();
+});
+
+watch(
+  [formProfessorId, formTurmaId, formDisciplinaId, formPapel, formDataInicio, formDataFim, formAtivo],
+  () => { if (!formDirty.value && modalAberto.value) formDirty.value = true; },
+);
 
 function mostrarSucesso(msg: string) {
   mensagemSucesso.value = msg;
@@ -57,6 +71,7 @@ function resetForm() {
   formDataInicio.value = '';
   formDataFim.value = '';
   formAtivo.value = true;
+  formDirty.value = false;
   editandoId.value = null;
   modoEdicao.value = false;
 }

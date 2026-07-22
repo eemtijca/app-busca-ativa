@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { onMounted, ref, watch } from 'vue';
+import { useRouter, onBeforeRouteLeave } from 'vue-router';
 import { supabaseClient } from '@/servicos/supabase';
 import CampoFormulario from '@/componentes/CampoFormulario.vue';
 import type { Turma, SerieTurma, LetraTurma } from '@/tipos/database';
@@ -20,6 +20,20 @@ const formSerie = ref<SerieTurma>('1º');
 const formLetra = ref<LetraTurma>('A');
 const formCapacidade = ref<number | null>(null);
 const formAtivo = ref(true);
+const formDirty = ref(false);
+
+onBeforeRouteLeave((_to, _from, next) => {
+  if (formDirty.value && modalAberto.value && !carregando.value) {
+    const confirmar = window.confirm('Há alterações não salvas. Deseja realmente sair?');
+    if (!confirmar) return next(false);
+  }
+  next();
+});
+
+watch(
+  [formSerie, formLetra, formCapacidade, formAtivo],
+  () => { if (!formDirty.value && modalAberto.value) formDirty.value = true; },
+);
 
 function mostrarSucesso(msg: string) {
   mensagemSucesso.value = msg;
@@ -36,6 +50,7 @@ function resetForm() {
   formLetra.value = 'A';
   formCapacidade.value = null;
   formAtivo.value = true;
+  formDirty.value = false;
   editandoId.value = null;
   modoEdicao.value = false;
 }

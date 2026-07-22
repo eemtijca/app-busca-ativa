@@ -68,6 +68,45 @@ const novoTipoVinculo = ref('outro');
 
 const contadorObservacoes = computed(() => observacoes.value.length);
 
+let timeoutDraft: ReturnType<typeof setTimeout> | null = null;
+
+function chaveDraft() {
+  return modoEdicao.value && alunoId.value
+    ? `draft-aluno-${alunoId.value}`
+    : 'draft-aluno-novo';
+}
+
+function salvarDraft() {
+  if (timeoutDraft) clearTimeout(timeoutDraft);
+  timeoutDraft = setTimeout(() => {
+    try {
+      sessionStorage.setItem(
+        chaveDraft(),
+        JSON.stringify({
+          nome: nome.value,
+          matricula: matricula.value,
+          codigoInep: codigoInep.value,
+          dataNascimento: dataNascimento.value,
+          dataMatricula: dataMatricula.value,
+          observacoes: observacoes.value,
+          transporteEscolar: transporteEscolar.value,
+          alimentacaoDiferenciada: alimentacaoDiferenciada.value,
+          necessidadesEspeciais: necessidadesEspeciais.value,
+          documentosRecebidos: documentosRecebidos.value,
+          turmaId: turmaId.value,
+        }),
+      );
+    } catch { /* ignorar */ }
+  }, 500);
+}
+
+function limparDraft() {
+  try {
+    sessionStorage.removeItem(chaveDraft());
+    sessionStorage.removeItem('draft-aluno-novo');
+  } catch { /* ignorar */ }
+}
+
 onBeforeRouteLeave((_to, _from, next) => {
   if (formDirty.value && !salvando.value) {
     const confirmar = window.confirm('Há alterações não salvas. Deseja realmente sair?');
@@ -80,6 +119,7 @@ watch(
   [nome, matricula, codigoInep, observacoes, documentosRecebidos, transporteEscolar, alimentacaoDiferenciada, necessidadesEspeciais],
   () => {
     if (!formDirty.value) formDirty.value = true;
+    salvarDraft();
   },
   { deep: true },
 );
@@ -283,6 +323,24 @@ onMounted(async () => {
   } else {
     dataMatricula.value = hoje();
   }
+
+  try {
+    const dadosSalvos = sessionStorage.getItem(chaveDraft());
+    if (dadosSalvos) {
+      const parsed = JSON.parse(dadosSalvos);
+      if (parsed.nome) nome.value = parsed.nome;
+      if (parsed.matricula) matricula.value = parsed.matricula;
+      if (parsed.codigoInep) codigoInep.value = parsed.codigoInep;
+      if (parsed.dataNascimento) dataNascimento.value = parsed.dataNascimento;
+      if (parsed.dataMatricula) dataMatricula.value = parsed.dataMatricula;
+      if (parsed.observacoes) observacoes.value = parsed.observacoes;
+      if (typeof parsed.transporteEscolar === 'boolean') transporteEscolar.value = parsed.transporteEscolar;
+      if (typeof parsed.alimentacaoDiferenciada === 'boolean') alimentacaoDiferenciada.value = parsed.alimentacaoDiferenciada;
+      if (typeof parsed.necessidadesEspeciais === 'boolean') necessidadesEspeciais.value = parsed.necessidadesEspeciais;
+      if (parsed.documentosRecebidos) documentosRecebidos.value = parsed.documentosRecebidos;
+      if (parsed.turmaId) turmaId.value = parsed.turmaId;
+    }
+  } catch { /* ignorar dados corrompidos */ }
 });
 
 async function salvar() {
@@ -315,6 +373,7 @@ async function salvar() {
         ...dadosExtras,
       } as Parameters<typeof atualizarAluno>[1] & typeof dadosExtras);
       if (ok) {
+        limparDraft();
         router.push('/gestao/alunos');
       } else {
         mostrarErro(erro.value || 'Falha ao atualizar aluno.');
@@ -346,6 +405,7 @@ async function salvar() {
         if (Object.keys(updates).length) {
           await supabaseClient.from('alunos').update(updates).eq('id', id);
         }
+        limparDraft();
         router.push('/gestao/alunos');
       } else {
         mostrarErro(erro.value || 'Falha ao criar aluno.');

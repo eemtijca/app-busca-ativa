@@ -54,6 +54,43 @@ const mensagemToast = ref<string | null>(null);
 const usuarioCriado = ref(false);
 const codigoCriado = ref<string | null>(null);
 
+let timeoutDraft: ReturnType<typeof setTimeout> | null = null;
+
+function chaveDraft() {
+  return modoEdicao.value && usuarioId.value
+    ? `draft-usuario-${usuarioId.value}`
+    : 'draft-usuario-novo';
+}
+
+function salvarDraft() {
+  if (usuarioCriado.value) return;
+  if (timeoutDraft) clearTimeout(timeoutDraft);
+  timeoutDraft = setTimeout(() => {
+    try {
+      sessionStorage.setItem(
+        chaveDraft(),
+        JSON.stringify({
+          nome: nome.value,
+          email: email.value,
+          papel: papel.value,
+          telefone: telefone.value,
+          cargo: cargo.value,
+          notificacoesAtivas: notificacoesAtivas.value,
+          acessoModulos: acessoModulos.value,
+          permissoes: permissoes.value,
+        }),
+      );
+    } catch { /* storage cheio ou indisponível */ }
+  }, 500);
+}
+
+function limparDraft() {
+  try {
+    sessionStorage.removeItem(chaveDraft());
+    sessionStorage.removeItem('draft-usuario-novo');
+  } catch { /* ignorar */ }
+}
+
 onBeforeRouteLeave((_to, _from, next) => {
   if (formDirty.value && !salvando.value && !usuarioCriado.value) {
     const confirmar = window.confirm('Há alterações não salvas. Deseja realmente sair?');
@@ -66,6 +103,7 @@ watch(
   [nome, email, telefone, cargo, notificacoesAtivas, acessoModulos, permissoes, papel],
   () => {
     if (!formDirty.value && !usuarioCriado.value) formDirty.value = true;
+    if (!usuarioCriado.value) salvarDraft();
   },
   { deep: true },
 );
@@ -147,6 +185,21 @@ onMounted(async () => {
       }
     }
   }
+
+  try {
+    const dadosSalvos = sessionStorage.getItem(chaveDraft());
+    if (dadosSalvos) {
+      const parsed = JSON.parse(dadosSalvos);
+      if (parsed.nome) nome.value = parsed.nome;
+      if (parsed.email) email.value = parsed.email;
+      if (parsed.papel) papel.value = parsed.papel;
+      if (parsed.telefone) telefone.value = parsed.telefone ?? '';
+      if (parsed.cargo) cargo.value = parsed.cargo ?? '';
+      if (typeof parsed.notificacoesAtivas === 'boolean') notificacoesAtivas.value = parsed.notificacoesAtivas;
+      if (parsed.acessoModulos) acessoModulos.value = parsed.acessoModulos;
+      if (parsed.permissoes) permissoes.value = parsed.permissoes;
+    }
+  } catch { /* ignorar dados corrompidos */ }
 });
 
 async function salvar() {
@@ -174,6 +227,7 @@ async function salvar() {
         ...dadosExtras,
       } as Parameters<typeof atualizarUsuario>[1] & typeof dadosExtras);
       if (ok) {
+        limparDraft();
         router.push('/gestao/usuarios');
       } else {
         mostrarErro(erro.value || 'Falha ao atualizar usuário.');
@@ -188,6 +242,7 @@ async function salvar() {
       });
       if (id) {
         await supabaseClient.from('perfis').update(dadosExtras).eq('id', id);
+        limparDraft();
         usuarioCriado.value = true;
         codigoCriado.value = codigo;
         if (codigo) {
