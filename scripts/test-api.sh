@@ -10,7 +10,6 @@ set -o pipefail
 
 SUPABASE_URL="${VITE_SUPABASE_URL:-http://127.0.0.1:54321}"
 ANON_KEY="${VITE_SUPABASE_PUBLISHABLE_KEY:-}"
-SERVICE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-}"
 PASS=0; FAIL=0; ERROS=""
 UNIQ=$(date +%s)_$$
 
@@ -73,11 +72,9 @@ done
 # Restore seed users' passwords (may have been changed by previous runs)
 restore_pw() {
   local uid="$1" pw="$2"
-  curl -s -X PUT "$SUPABASE_URL/auth/v1/admin/users/$uid" \
-    -H "Content-Type: application/json" \
-    -H "apikey: $SERVICE_KEY" \
-    -H "Authorization: Bearer $SERVICE_KEY" \
-    -d "{\"password\":\"$pw\",\"email_confirm\":true}" > /dev/null 2>&1 || true
+  npx supabase db query \
+    "UPDATE auth.users SET encrypted_password = crypt('$pw', gen_salt('bf')) WHERE id = '$uid';" \
+    2>/dev/null || true
 }
 restore_pw "a0000000-0000-0000-0000-000000000002" "Prof123!"
 restore_pw "a0000000-0000-0000-0000-000000000003" "Prof123!"
@@ -319,9 +316,14 @@ HTTP=$(api_code GET "/rest/v1/turmas?select=id,nome_completo&limit=3" '' "$TG")
 assert "turmas SELECT 200" "200" "$HTTP"
 
 TID=$(UUID)
-HTTP=$(api_code POST "/rest/v1/turmas" "{\"id\":\"$TID\",\"ano_letivo_id\":\"b0000000-0000-0000-0000-000000000001\",\"serie\":\"1º\",\"letra\":\"B\",\"nome_completo\":\"1º B\"}" "$TG")
+# Limpar dados de execuções anteriores (FK: frequencias → turma ← enturmacoes)
+npx supabase db query "DELETE FROM public.frequencias WHERE turma_id IN (SELECT id FROM public.turmas WHERE ano_letivo_id='b0000000-0000-0000-0000-000000000001' AND serie='1º' AND letra='B');" 2>/dev/null
+npx supabase db query "DELETE FROM public.enturmacoes WHERE turma_id IN (SELECT id FROM public.turmas WHERE ano_letivo_id='b0000000-0000-0000-0000-000000000001' AND serie='1º' AND letra='B');" 2>/dev/null
+npx supabase db query "DELETE FROM public.turmas WHERE ano_letivo_id='b0000000-0000-0000-0000-000000000001' AND serie='1º' AND letra='B';" 2>/dev/null
+HTTP=$(api_code POST "/rest/v1/turmas" "{\"id\":\"$TID\",\"ano_letivo_id\":\"b0000000-0000-0000-0000-000000000001\",\"serie\":\"1º\",\"letra\":\"B\"}" "$TG")
 assert "turmas INSERT 201" "201" "$HTTP"
 
+npx supabase db query "DELETE FROM public.enturmacoes WHERE aluno_id='$AID';" 2>/dev/null
 HTTP=$(api_code POST "/rest/v1/enturmacoes" "{\"aluno_id\":\"$AID\",\"turma_id\":\"$TID\",\"ano_letivo_id\":\"b0000000-0000-0000-0000-000000000001\",\"status\":\"matriculado\",\"data_matricula\":\"2026-07-13\"}" "$TG")
 assert "enturmacoes INSERT 201" "201" "$HTTP"
 
@@ -336,6 +338,7 @@ assert "disciplinas INSERT 201" "201" "$HTTP"
 
 # frequencias - use our freshly created aluno + turma
 FREQ_ID=$(UUID)
+npx supabase db query "DELETE FROM public.frequencias WHERE aluno_id='$AID' AND data_aula='2026-07-13';" 2>/dev/null
 HTTP=$(api_code POST "/rest/v1/frequencias" "{\"aluno_id\":\"$AID\",\"professor_id\":\"a0000000-0000-0000-0000-000000000002\",\"turma_id\":\"$TID\",\"ano_letivo_id\":\"b0000000-0000-0000-0000-000000000001\",\"data_aula\":\"2026-07-13\",\"periodo\":\"Manhã\",\"status\":\"presente\",\"client_request_id\":\"$FREQ_ID\"}" "$TG")
 assert "frequencias INSERT 201" "201" "$HTTP"
 
@@ -688,11 +691,7 @@ echo "  FIM SECAO 7 — TODOS OS FLUXOS VERIFICADOS"
 echo "=========================================="
 
 # Restore prof1 password (changed by redefinir-senha-codigo test)
-curl -s -X PUT "$SUPABASE_URL/auth/v1/admin/users/a0000000-0000-0000-0000-000000000002" \
-  -H "Content-Type: application/json" \
-  -H "apikey: $SERVICE_KEY" \
-  -H "Authorization: Bearer $SERVICE_KEY" \
-  -d '{"password":"Prof123!","email_confirm":true}' > /dev/null 2>&1 || true
+restore_pw "a0000000-0000-0000-0000-000000000002" "Prof123!"
 
 echo ""; echo "=========================================="
 echo "  TOTAL: $((PASS+FAIL))  |  PASS: $PASS  |  FAIL: $FAIL"
