@@ -9,7 +9,13 @@ import type { JustificativaPendente } from '@/tipos/componentes';
 
 const router = useRouter();
 const { buscarJustificativasPendentes, validarJustificativa } = useMonitoramento();
-const { ultimaAtualizacao, estaAtualizando, statusConexao, aoConectar, atualizar: refresh } = useRealtimeRefresh();
+const {
+  ultimaAtualizacao,
+  estaAtualizando,
+  statusConexao,
+  aoConectar,
+  atualizar: refresh,
+} = useRealtimeRefresh();
 
 let canalJustificativas: ReturnType<typeof supabaseClient.channel>;
 

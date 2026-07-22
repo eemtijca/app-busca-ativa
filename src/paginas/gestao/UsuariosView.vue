@@ -8,7 +8,13 @@ import type { UsuarioItem } from '@/tipos/componentes';
 
 const router = useRouter();
 const { buscarUsuarios, ativarUsuario, desativarUsuario, carregando } = useGestaoUsuarios();
-const { ultimaAtualizacao, estaAtualizando, statusConexao, aoConectar, atualizar: refresh } = useRealtimeRefresh();
+const {
+  ultimaAtualizacao,
+  estaAtualizando,
+  statusConexao,
+  aoConectar,
+  atualizar: refresh,
+} = useRealtimeRefresh();
 
 const usuarios = ref<UsuarioItem[]>([]);
 const busca = ref('');

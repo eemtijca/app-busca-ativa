@@ -11,7 +11,13 @@ import type { AlertaResponsavel } from '@/tipos/componentes';
 const router = useRouter();
 const { usuario } = useAutenticacao();
 const { buscarAlertasResponsavel } = useMonitoramento();
-const { ultimaAtualizacao, estaAtualizando, statusConexao, aoConectar, atualizar: refresh } = useRealtimeRefresh();
+const {
+  ultimaAtualizacao,
+  estaAtualizando,
+  statusConexao,
+  aoConectar,
+  atualizar: refresh,
+} = useRealtimeRefresh();
 
 let canalAlertas: ReturnType<typeof supabaseClient.channel>;
 

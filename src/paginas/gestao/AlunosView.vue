@@ -8,7 +8,13 @@ import type { AlunoItem } from '@/tipos/componentes';
 
 const router = useRouter();
 const { buscarAlunos, carregando } = useGestaoUsuarios();
-const { ultimaAtualizacao, estaAtualizando, statusConexao, aoConectar, atualizar: refresh } = useRealtimeRefresh();
+const {
+  ultimaAtualizacao,
+  estaAtualizando,
+  statusConexao,
+  aoConectar,
+  atualizar: refresh,
+} = useRealtimeRefresh();
 
 const alunos = ref<AlunoItem[]>([]);
 const busca = ref('');

@@ -154,8 +154,7 @@ async function salvar() {
         usuarioCriado.value = true;
         codigoCriado.value = codigo;
         if (codigo) {
-          mensagemSucesso.value =
-            'Usuário criado com sucesso! Código gerado automaticamente.';
+          mensagemSucesso.value = 'Usuário criado com sucesso! Código gerado automaticamente.';
         } else {
           mensagemSucesso.value =
             'Usuário criado com sucesso! A senha inicial deve ser redefinida via código.';
@@ -229,7 +228,11 @@ async function salvar() {
           {{ codigoCriado }}
         </code>
         <div class="d-flex gap-2 justify-content-center mb-3">
-          <button type="button" class="btn btn-sm btn-outline-secondary" @click="copiarCodigoCriado">
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            @click="copiarCodigoCriado"
+          >
             <i class="bi bi-clipboard me-1" aria-hidden="true"></i>
             Copiar
           </button>

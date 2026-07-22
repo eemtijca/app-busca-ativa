@@ -108,7 +108,8 @@ function tempoRestanteFormatado(expiraEm: string): { texto: string; classe: stri
   const m = Math.floor(diff / 60000);
   const s = Math.floor((diff % 60000) / 1000);
   const texto = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  const classe = diff < 600000 ? 'text-danger fw-bold' : diff < 1800000 ? 'text-warning' : 'text-success';
+  const classe =
+    diff < 600000 ? 'text-danger fw-bold' : diff < 1800000 ? 'text-warning' : 'text-success';
   return { texto, classe, pct };
 }
 
@@ -261,7 +262,12 @@ onMounted(async () => {
     .channel('codigos-notificacoes')
     .on(
       'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'notificacoes', filter: 'tipo=eq.codigo_redefinicao' },
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notificacoes',
+        filter: 'tipo=eq.codigo_redefinicao',
+      },
       async (payload) => {
         const notif = payload.new as Record<string, unknown>;
         if (idsConhecidosNotificacoes.value.has(notif.id as string)) return;
@@ -538,9 +544,7 @@ onUnmounted(() => {
                         @click="toggleVisibilidade(c.id)"
                       >
                         <i
-                          :class="
-                            codigosVisiveis.has(c.id) ? 'bi bi-eye-slash' : 'bi bi-eye'
-                          "
+                          :class="codigosVisiveis.has(c.id) ? 'bi bi-eye-slash' : 'bi bi-eye'"
                           aria-hidden="true"
                         ></i>
                       </button>
@@ -758,7 +762,9 @@ onUnmounted(() => {
           </div>
           <div class="modal-body">
             <p class="small mb-2">
-              Tem certeza que deseja revogar o código de <strong>{{ codigoParaRevogar.nome }}</strong>?
+              Tem certeza que deseja revogar o código de
+              <strong>{{ codigoParaRevogar.nome }}</strong
+              >?
             </p>
             <div class="border rounded p-2 small bg-body-tertiary mb-0">
               <p class="mb-1">
@@ -767,7 +773,9 @@ onUnmounted(() => {
               </p>
               <p class="mb-1">
                 <span class="text-body-secondary">Expira em:</span>
-                <span class="ms-1">{{ tempoRestanteFormatado(codigoParaRevogar.expira_em).texto }}</span>
+                <span class="ms-1">{{
+                  tempoRestanteFormatado(codigoParaRevogar.expira_em).texto
+                }}</span>
               </p>
               <p class="mb-0">
                 <span class="text-body-secondary">Código:</span>

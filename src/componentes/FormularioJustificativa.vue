@@ -87,7 +87,11 @@ function submeter() {
       </div>
     </div>
 
-    <div v-if="erroValidacao" class="alert alert-danger d-flex align-items-center py-2 small mb-3" role="alert">
+    <div
+      v-if="erroValidacao"
+      class="alert alert-danger d-flex align-items-center py-2 small mb-3"
+      role="alert"
+    >
       <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
       <span>{{ erroValidacao }}</span>
     </div>
@@ -163,7 +167,9 @@ function submeter() {
     </div>
 
     <div class="d-flex gap-2 justify-content-end">
-      <button type="button" class="btn btn-sm btn-outline-secondary" @click="router.back()">Cancelar</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" @click="router.back()">
+        Cancelar
+      </button>
       <button type="submit" class="btn btn-sm btn-success" :disabled="enviando">
         <span
           v-if="enviando"

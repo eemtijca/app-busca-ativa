@@ -81,9 +81,7 @@ onMounted(async () => {
         </div>
 
         <div class="mb-3">
-          <label for="periodoSelect" class="form-label fw-medium small"
-            >Período da ausência</label
-          >
+          <label for="periodoSelect" class="form-label fw-medium small">Período da ausência</label>
           <select id="periodoSelect" v-model="periodo" class="form-select form-select-sm">
             <option v-for="p in periodosAula" :key="p" :value="p">{{ p }}</option>
           </select>

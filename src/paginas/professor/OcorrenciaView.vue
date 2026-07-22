@@ -78,7 +78,12 @@ onMounted(async () => {
       <div class="card-body">
         <div class="mb-3">
           <label for="alunoSelect" class="form-label fw-medium small">Aluno</label>
-          <select id="alunoSelect" v-model="alunoId" class="form-select form-select-sm" :disabled="!alunos.length">
+          <select
+            id="alunoSelect"
+            v-model="alunoId"
+            class="form-select form-select-sm"
+            :disabled="!alunos.length"
+          >
             <option value="" disabled>Selecione um aluno</option>
             <option v-for="a in alunos" :key="a.id" :value="a.id">
               {{ a.nome }} — {{ a.turma || 'Sem turma' }}
