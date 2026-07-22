@@ -108,11 +108,13 @@ export function useMonitoramento() {
 
       const ausentesSet = new Set<string>();
       const periodosAluno = new Map<string, string[]>();
+      const observacoesAluno = new Map<string, string | null>();
+      const motivosAluno = new Map<string, string[]>();
 
       if (dataAula) {
         const { data: ausencias } = await supabaseClient
           .from('frequencias')
-          .select('aluno_id, periodo')
+          .select('aluno_id, periodo, observacao, motivos_ausencia')
           .in('aluno_id', alunoIds)
           .eq('data_aula', dataAula)
           .eq('tipo_registro', 'chamada_aula')
@@ -120,11 +122,15 @@ export function useMonitoramento() {
           .is('deleted_at', null);
 
         for (const a of ausencias ?? []) {
-          const id = (a as unknown as { aluno_id: string }).aluno_id;
-          const p = (a as unknown as { periodo: string }).periodo;
+          const reg = a as unknown as { aluno_id: string; periodo: string; observacao: string | null; motivos_ausencia: string[] };
+          const id = reg.aluno_id;
           ausentesSet.add(id);
           if (!periodosAluno.has(id)) periodosAluno.set(id, []);
-          periodosAluno.get(id)!.push(p);
+          periodosAluno.get(id)!.push(reg.periodo);
+          observacoesAluno.set(id, reg.observacao);
+          if (reg.motivos_ausencia?.length) {
+            motivosAluno.set(id, reg.motivos_ausencia);
+          }
         }
       }
 
@@ -138,6 +144,8 @@ export function useMonitoramento() {
           turma_id: ent?.turma_id ?? null,
           ausente: ausentesSet.has(aluno.id),
           periodosAusentes: periodosAluno.get(aluno.id) ?? [],
+          observacao: observacoesAluno.get(aluno.id) ?? null,
+          motivosAusencia: motivosAluno.get(aluno.id) ?? [],
         };
       });
     } catch (e) {
@@ -424,6 +432,9 @@ export function useMonitoramento() {
           turma: null,
           descricao: oc.descricao,
           tipo: oc.tipo,
+          tags_comportamento: oc.tags_comportamento ?? [],
+          notificar_coordenacao: oc.notificar_coordenacao,
+          notificar_responsavel: oc.notificar_responsavel,
           data: formatarData(oc.created_at),
           professorNome: prof?.nome,
           exigePresencaResponsavel: oc.exige_presenca_responsavel,

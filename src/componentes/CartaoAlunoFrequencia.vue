@@ -43,6 +43,17 @@ const inicialAluno = computed(() =>
             Ausente em {{ aluno.periodosAusentes.length }} aula(s)
           </span>
         </div>
+        <div v-if="aluno.motivosAusencia && aluno.motivosAusencia.length" class="small mt-1 d-flex gap-1 flex-wrap">
+          <span
+            v-for="m in aluno.motivosAusencia"
+            :key="m"
+            class="badge text-bg-light border"
+          >{{ m }}</span>
+        </div>
+        <div v-if="aluno.observacao" class="small mt-1 text-body-secondary">
+          <i class="bi bi-chat-quote me-1" aria-hidden="true"></i>
+          {{ aluno.observacao }}
+        </div>
       </div>
 
       <button

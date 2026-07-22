@@ -19,6 +19,15 @@ const rotuloTipo: Record<string, string> = {
   grave: 'Ocorrência grave',
   suspensao: 'Suspensão',
 };
+const rotuloTag: Record<string, string> = {
+  agressao_verbal: 'Agressão verbal',
+  agressao_fisica: 'Agressão física',
+  desacato: 'Desacato',
+  dano_patrimonio: 'Dano ao patrimônio',
+  bullying: 'Bullying',
+  descumprimento_regras: 'Descumprimento de regras',
+  saida_nao_autorizada: 'Saída não autorizada',
+};
 </script>
 
 <template>
@@ -56,6 +65,17 @@ const rotuloTipo: Record<string, string> = {
         </span>
         <span v-if="oc.exigePresencaResponsavel" class="badge text-bg-warning">
           <i class="bi bi-people me-1" aria-hidden="true"></i>Exige responsável
+        </span>
+        <span
+          v-for="tag in oc.tags_comportamento"
+          :key="tag"
+          class="badge text-bg-info"
+        >{{ rotuloTag[tag] || tag }}</span>
+        <span v-if="oc.notificar_coordenacao" class="badge text-bg-light border" title="Coordenação notificada">
+          <i class="bi bi-megaphone me-1" aria-hidden="true"></i>Coord.
+        </span>
+        <span v-if="oc.notificar_responsavel" class="badge text-bg-light border" title="Responsável notificado">
+          <i class="bi bi-person-badge me-1" aria-hidden="true"></i>Resp.
         </span>
       </div>
 

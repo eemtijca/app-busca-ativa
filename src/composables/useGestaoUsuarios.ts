@@ -57,6 +57,9 @@ export function useGestaoUsuarios() {
         telefone: p.telefone,
         cargo: p.cargo,
         ultimo_acesso: p.ultimo_acesso_em,
+        notificacoes_ativas: p.notificacoes_ativas,
+        acesso_modulos: p.acesso_modulos ?? [],
+        permissoes: p.permissoes ?? [],
       }));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -191,6 +194,13 @@ export function useGestaoUsuarios() {
           turma: turmaId ? (turmaMap.get(turmaId) ?? null) : null,
           status: a.status,
           data_nascimento: a.data_nascimento,
+          codigo_inep: a.codigo_inep,
+          data_matricula: a.data_matricula,
+          observacoes: a.observacoes,
+          transporte_escolar: a.transporte_escolar,
+          alimentacao_diferenciada: a.alimentacao_diferenciada,
+          necessidades_especiais: a.necessidades_especiais,
+          documentos_recebidos: a.documentos_recebidos ?? [],
         };
       });
     } catch (e) {
