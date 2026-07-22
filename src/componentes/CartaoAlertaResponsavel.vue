@@ -88,7 +88,7 @@ const classeBordaEspecifica = computed(() => {
         <div class="d-flex flex-wrap gap-2">
           <button
             type="button"
-            class="btn btn-sm btn-outline-primary"
+            class="btn btn-sm btn-outline-success"
             @click="emit('ver-detalhes', alerta.id)"
           >
             <i class="bi bi-eye me-1" aria-hidden="true"></i>

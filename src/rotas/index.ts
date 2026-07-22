@@ -1,25 +1,35 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { supabaseClient, decodificarToken } from '@/servicos/supabase';
 import LayoutPrincipal from '@/layouts/LayoutPrincipal.vue';
-import LoginView from '@/paginas/LoginView.vue';
-import SolicitarRecuperacaoView from '@/paginas/SolicitarRecuperacaoView.vue';
-import RecuperarSenhaView from '@/paginas/RecuperarSenhaView.vue';
-import ProfessorHomeView from '@/paginas/ProfessorHomeView.vue';
-import ProfessorFrequenciaView from '@/paginas/ProfessorFrequenciaView.vue';
-import ProfessorAusenciaView from '@/paginas/ProfessorAusenciaView.vue';
-import ProfessorOcorrenciaView from '@/paginas/ProfessorOcorrenciaView.vue';
-import GestaoHomeView from '@/paginas/GestaoHomeView.vue';
-import GestaoRankingView from '@/paginas/GestaoRankingView.vue';
-import GestaoOcorrenciasView from '@/paginas/GestaoOcorrenciasView.vue';
-import GestaoJustificativasView from '@/paginas/GestaoJustificativasView.vue';
-import ResponsavelHomeView from '@/paginas/ResponsavelHomeView.vue';
-import ResponsavelAlertasView from '@/paginas/ResponsavelAlertasView.vue';
-import ResponsavelTermometroView from '@/paginas/ResponsavelTermometroView.vue';
-import ResponsavelJustificativaView from '@/paginas/ResponsavelJustificativaView.vue';
-import ResponsavelChatView from '@/paginas/ResponsavelChatView.vue';
-import Status403View from '@/paginas/Status403View.vue';
-import Status404View from '@/paginas/Status404View.vue';
-import Status500View from '@/paginas/Status500View.vue';
+import LoginView from '@/paginas/auth/LoginView.vue';
+import SolicitarRecuperacaoView from '@/paginas/auth/SolicitarRecuperacaoView.vue';
+import RecuperarSenhaView from '@/paginas/auth/RecuperarSenhaView.vue';
+import SolicitarCodigoView from '@/paginas/auth/SolicitarCodigoView.vue';
+import RedefinirSenhaCodigoView from '@/paginas/auth/RedefinirSenhaCodigoView.vue';
+import ProfessorHomeView from '@/paginas/professor/HomeView.vue';
+import ProfessorFrequenciaView from '@/paginas/professor/FrequenciaView.vue';
+import ProfessorAusenciaView from '@/paginas/professor/AusenciaView.vue';
+import ProfessorOcorrenciaView from '@/paginas/professor/OcorrenciaView.vue';
+import GestaoHomeView from '@/paginas/gestao/GestaoHomeView.vue';
+import GestaoRankingView from '@/paginas/gestao/GestaoRankingView.vue';
+import GestaoOcorrenciasView from '@/paginas/gestao/GestaoOcorrenciasView.vue';
+import GestaoJustificativasView from '@/paginas/gestao/GestaoJustificativasView.vue';
+import GestaoUsuariosView from '@/paginas/gestao/UsuariosView.vue';
+import GestaoUsuarioFormView from '@/paginas/gestao/UsuarioFormView.vue';
+import GestaoAlunosView from '@/paginas/gestao/AlunosView.vue';
+import GestaoAlunoFormView from '@/paginas/gestao/AlunoFormView.vue';
+import GestaoCodigosView from '@/paginas/gestao/CodigosView.vue';
+import GestaoTurmasView from '@/paginas/gestao/TurmasView.vue';
+import GestaoDisciplinasView from '@/paginas/gestao/DisciplinasView.vue';
+import GestaoAtribuicoesView from '@/paginas/gestao/AtribuicoesView.vue';
+import ResponsavelHomeView from '@/paginas/responsavel/HomeView.vue';
+import ResponsavelAlertasView from '@/paginas/responsavel/AlertasView.vue';
+import ResponsavelTermometroView from '@/paginas/responsavel/TermometroView.vue';
+import ResponsavelJustificativaView from '@/paginas/responsavel/JustificativaView.vue';
+import ResponsavelChatView from '@/paginas/responsavel/ChatView.vue';
+import Status403View from '@/paginas/error/Status403View.vue';
+import Status404View from '@/paginas/error/Status404View.vue';
+import Status500View from '@/paginas/error/Status500View.vue';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -62,6 +72,18 @@ const router = createRouter({
       meta: { requerAutenticacao: false },
       beforeEnter: redirecionarSeDesabilitado,
       component: RecuperarSenhaView,
+    },
+    {
+      path: '/solicitar-codigo',
+      name: 'solicitar-codigo',
+      meta: { requerAutenticacao: false },
+      component: SolicitarCodigoView,
+    },
+    {
+      path: '/redefinir-senha-codigo',
+      name: 'redefinir-senha-codigo',
+      meta: { requerAutenticacao: false },
+      component: RedefinirSenhaCodigoView,
     },
     {
       path: '/professor',
@@ -120,6 +142,66 @@ const router = createRouter({
           name: 'gestao-justificativas',
           meta: { requerAutenticacao: true, papeisPermitidos: ['gestao'] },
           component: GestaoJustificativasView,
+        },
+        {
+          path: 'usuarios',
+          name: 'gestao-usuarios',
+          meta: { requerAutenticacao: true, papeisPermitidos: ['gestao'] },
+          component: GestaoUsuariosView,
+        },
+        {
+          path: 'usuarios/novo',
+          name: 'gestao-usuarios-novo',
+          meta: { requerAutenticacao: true, papeisPermitidos: ['gestao'] },
+          component: GestaoUsuarioFormView,
+        },
+        {
+          path: 'usuarios/:id',
+          name: 'gestao-usuarios-editar',
+          meta: { requerAutenticacao: true, papeisPermitidos: ['gestao'] },
+          component: GestaoUsuarioFormView,
+        },
+        {
+          path: 'alunos',
+          name: 'gestao-alunos',
+          meta: { requerAutenticacao: true, papeisPermitidos: ['gestao'] },
+          component: GestaoAlunosView,
+        },
+        {
+          path: 'alunos/novo',
+          name: 'gestao-alunos-novo',
+          meta: { requerAutenticacao: true, papeisPermitidos: ['gestao'] },
+          component: GestaoAlunoFormView,
+        },
+        {
+          path: 'alunos/:id',
+          name: 'gestao-alunos-editar',
+          meta: { requerAutenticacao: true, papeisPermitidos: ['gestao'] },
+          component: GestaoAlunoFormView,
+        },
+        {
+          path: 'codigos',
+          name: 'gestao-codigos',
+          meta: { requerAutenticacao: true, papeisPermitidos: ['gestao'] },
+          component: GestaoCodigosView,
+        },
+        {
+          path: 'turmas',
+          name: 'gestao-turmas',
+          meta: { requerAutenticacao: true, papeisPermitidos: ['gestao'] },
+          component: GestaoTurmasView,
+        },
+        {
+          path: 'disciplinas',
+          name: 'gestao-disciplinas',
+          meta: { requerAutenticacao: true, papeisPermitidos: ['gestao'] },
+          component: GestaoDisciplinasView,
+        },
+        {
+          path: 'atribuicoes',
+          name: 'gestao-atribuicoes',
+          meta: { requerAutenticacao: true, papeisPermitidos: ['gestao'] },
+          component: GestaoAtribuicoesView,
         },
       ],
     },

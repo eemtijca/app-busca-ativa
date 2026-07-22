@@ -2,12 +2,20 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMonitoramento } from '@/composables/useMonitoramento';
+import { useRealtimeRefresh } from '@/composables/useRealtimeRefresh';
 import { supabaseClient } from '@/servicos/supabase';
 import CartaoAlunoRisco from '@/componentes/CartaoAlunoRisco.vue';
 import type { AlunoRisco } from '@/tipos/componentes';
 
 const router = useRouter();
 const { buscarRankingRisco, carregando } = useMonitoramento();
+const {
+  ultimaAtualizacao,
+  estaAtualizando,
+  statusConexao,
+  aoConectar,
+  atualizar: refresh,
+} = useRealtimeRefresh();
 
 const ranking = ref<AlunoRisco[]>([]);
 const filtroRisco = ref<'todos' | 'alto' | 'medio' | 'baixo'>('todos');
@@ -38,14 +46,22 @@ const totalRiscoBaixo = computed(() => ranking.value.filter((r) => r.nivel === '
 
 function contatarFamilia() {}
 
-onMounted(async () => {
+async function carregarRanking() {
   ranking.value = await buscarRankingRisco();
+}
+
+async function atualizarManual() {
+  await refresh(carregarRanking);
+}
+
+onMounted(async () => {
+  await carregarRanking();
   canalRanking = supabaseClient
     .channel('ranking')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'frequencias' }, () =>
       buscarRankingRisco().then((r) => (ranking.value = r)),
     )
-    .subscribe();
+    .subscribe(aoConectar(carregarRanking));
 });
 
 onUnmounted(() => {
@@ -55,15 +71,50 @@ onUnmounted(() => {
 
 <template>
   <div class="container py-4" style="max-width: 960px">
+    <router-link to="/gestao" class="btn btn-sm btn-outline-success me-2 mb-3">
+      <i class="bi bi-house me-1" aria-hidden="true"></i>
+      Início
+    </router-link>
     <button type="button" class="btn btn-sm btn-outline-secondary mb-3" @click="router.back()">
       <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
       Voltar
     </button>
 
-    <h1 class="h5 fw-bold mb-3">
-      <i class="bi bi-bar-chart text-danger me-2" aria-hidden="true"></i>
-      Ranking de priorização de risco
-    </h1>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+      <h1 class="h5 fw-bold mb-0">
+        <i class="bi bi-bar-chart text-danger me-2" aria-hidden="true"></i>
+        Ranking de priorização de risco
+      </h1>
+      <div class="d-flex align-items-center gap-2">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          :disabled="estaAtualizando"
+          @click="atualizarManual"
+          title="Recarregar dados"
+        >
+          <span
+            v-if="estaAtualizando"
+            class="spinner-border spinner-border-sm me-1"
+            role="status"
+            aria-hidden="true"
+          ></span>
+          <i v-else class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>
+          Atualizar
+        </button>
+        <span
+          class="rounded-circle d-inline-block"
+          :class="statusConexao === 'conectado' ? 'bg-success' : 'bg-danger'"
+          style="width: 8px; height: 8px"
+          :title="statusConexao === 'conectado' ? 'Conectado' : 'Desconectado'"
+        ></span>
+      </div>
+    </div>
+
+    <div v-if="ultimaAtualizacao" class="small text-body-tertiary mb-2 text-end">
+      <i class="bi bi-clock me-1" aria-hidden="true"></i>
+      Última atualização: {{ ultimaAtualizacao.toLocaleTimeString('pt-BR') }}
+    </div>
 
     <div class="d-flex flex-wrap gap-2 mb-3">
       <div class="btn-group btn-group-sm" role="group" aria-label="Filtrar por nível de risco">

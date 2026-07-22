@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
 import { useMonitoramento } from '@/composables/useMonitoramento';
@@ -15,6 +15,7 @@ const buscaAluno = ref('');
 const dataAula = ref(new Date().toISOString().slice(0, 10));
 const periodoSelecionado = ref('Dia completo');
 const mensagemSucesso = ref<string | null>(null);
+const salvando = ref(false);
 
 const periodosAula = [
   'Dia completo',
@@ -51,13 +52,15 @@ function alternarAusencia(alunoId: string) {
 }
 
 async function salvarFrequencia() {
-  if (!usuario.value) return;
+  if (!usuario.value || salvando.value) return;
+  salvando.value = true;
   const { registradas, erro: errMsg } = await registrarFrequenciaEmMassa(
     alunos.value,
     usuario.value.id,
     dataAula.value,
     periodoSelecionado.value,
   );
+  salvando.value = false;
   if (errMsg) {
     mensagemSucesso.value = errMsg;
   } else if (registradas > 0) {
@@ -68,20 +71,32 @@ async function salvarFrequencia() {
   setTimeout(() => (mensagemSucesso.value = null), 4000);
 }
 
-onMounted(async () => {
-  alunos.value = await buscarAlunosParaFrequencia();
+async function carregarAlunos() {
+  alunos.value = await buscarAlunosParaFrequencia(dataAula.value);
+}
+
+onMounted(carregarAlunos);
+
+watch(dataAula, () => {
+  carregarAlunos();
 });
 </script>
 
 <template>
   <div class="container py-4" style="max-width: 960px">
-    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" @click="router.back()">
-      <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
-      Voltar
-    </button>
+    <div class="d-flex gap-2 mb-3">
+      <router-link to="/professor" class="btn btn-sm btn-outline-success">
+        <i class="bi bi-house me-1" aria-hidden="true"></i>
+        Início
+      </router-link>
+      <button type="button" class="btn btn-sm btn-outline-secondary" @click="router.back()">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Voltar
+      </button>
+    </div>
 
     <h1 class="h5 fw-bold mb-3">
-      <i class="bi bi-check2-square text-primary me-2" aria-hidden="true"></i>
+      <i class="bi bi-check2-square text-success me-2" aria-hidden="true"></i>
       Registrar frequência
     </h1>
 
@@ -178,8 +193,8 @@ onMounted(async () => {
           <p class="mb-0 small">Nenhum aluno encontrado.</p>
         </div>
 
-        <div v-else class="row g-2 g-md-3">
-          <div v-for="aluno in alunosFiltrados" :key="aluno.id" class="col-12 col-md-6 col-xl-4">
+        <div v-else class="d-flex flex-column gap-2">
+          <div v-for="aluno in alunosFiltrados" :key="aluno.id" class="w-100">
             <CartaoAlunoFrequencia :aluno="aluno" @alternar="alternarAusencia" />
           </div>
         </div>
@@ -191,7 +206,7 @@ onMounted(async () => {
         </button>
         <button
           type="button"
-          class="btn btn-primary btn-sm"
+          class="btn btn-success btn-sm"
           :disabled="carregando || !alunos.length"
           @click="salvarFrequencia"
         >

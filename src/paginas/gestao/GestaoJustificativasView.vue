@@ -2,12 +2,20 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMonitoramento } from '@/composables/useMonitoramento';
+import { useRealtimeRefresh } from '@/composables/useRealtimeRefresh';
 import { supabaseClient } from '@/servicos/supabase';
 import FilaJustificativas from '@/componentes/FilaJustificativas.vue';
 import type { JustificativaPendente } from '@/tipos/componentes';
 
 const router = useRouter();
 const { buscarJustificativasPendentes, validarJustificativa } = useMonitoramento();
+const {
+  ultimaAtualizacao,
+  estaAtualizando,
+  statusConexao,
+  aoConectar,
+  atualizar: refresh,
+} = useRealtimeRefresh();
 
 let canalJustificativas: ReturnType<typeof supabaseClient.channel>;
 
@@ -66,7 +74,7 @@ async function recusarJustificativa(justId: string) {
   }
 }
 
-onMounted(async () => {
+async function processarJustificativas() {
   const j = await buscarJustificativasPendentes();
   justificativas.value = j.map((just) => {
     const texto = just.motivo ?? '';
@@ -75,20 +83,20 @@ onMounted(async () => {
     else if (texto.startsWith('[RECUSADA]')) status = 'recusada';
     return { ...just, status };
   });
+}
+
+async function atualizarManual() {
+  await refresh(processarJustificativas);
+}
+
+onMounted(async () => {
+  await processarJustificativas();
   canalJustificativas = supabaseClient
     .channel('justificativas-gestao')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'frequencias' }, () =>
-      buscarJustificativasPendentes().then((r) => {
-        justificativas.value = r.map((just) => {
-          const texto = just.motivo ?? '';
-          let status: JustificativaPendente['status'] = 'pendente';
-          if (texto.startsWith('[ACEITA]')) status = 'aceita';
-          else if (texto.startsWith('[RECUSADA]')) status = 'recusada';
-          return { ...just, status };
-        });
-      }),
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'justificativas_faltas' }, () =>
+      processarJustificativas(),
     )
-    .subscribe();
+    .subscribe(aoConectar(processarJustificativas));
 });
 
 onUnmounted(() => {
@@ -98,6 +106,10 @@ onUnmounted(() => {
 
 <template>
   <div class="container py-4" style="max-width: 960px">
+    <router-link to="/gestao" class="btn btn-sm btn-outline-success me-2 mb-3">
+      <i class="bi bi-house me-1" aria-hidden="true"></i>
+      Início
+    </router-link>
     <button type="button" class="btn btn-sm btn-outline-secondary mb-3" @click="router.back()">
       <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
       Voltar
@@ -108,7 +120,36 @@ onUnmounted(() => {
         <i class="bi bi-clipboard-check text-info me-2" aria-hidden="true"></i>
         Validação de justificativas
       </h1>
-      <span class="badge text-bg-warning">{{ justificativasPendentes.length }} pendente(s)</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge text-bg-warning">{{ justificativasPendentes.length }} pendente(s)</span>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          :disabled="estaAtualizando"
+          @click="atualizarManual"
+          title="Recarregar dados"
+        >
+          <span
+            v-if="estaAtualizando"
+            class="spinner-border spinner-border-sm me-1"
+            role="status"
+            aria-hidden="true"
+          ></span>
+          <i v-else class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>
+          Atualizar
+        </button>
+        <span
+          class="rounded-circle d-inline-block"
+          :class="statusConexao === 'conectado' ? 'bg-success' : 'bg-danger'"
+          style="width: 8px; height: 8px"
+          :title="statusConexao === 'conectado' ? 'Conectado' : 'Desconectado'"
+        ></span>
+      </div>
+    </div>
+
+    <div v-if="ultimaAtualizacao" class="small text-body-tertiary mb-2 text-end">
+      <i class="bi bi-clock me-1" aria-hidden="true"></i>
+      Última atualização: {{ ultimaAtualizacao.toLocaleTimeString('pt-BR') }}
     </div>
 
     <div v-if="mensagemSucesso" class="alert alert-success py-2 small mb-3" role="status">

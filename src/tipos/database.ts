@@ -31,7 +31,8 @@ export type TipoNotificacao =
   | 'ocorrencia'
   | 'justificativa'
   | 'mensagem'
-  | 'sistema';
+  | 'sistema'
+  | 'codigo_redefinicao';
 export type StatusImportacao = 'processando' | 'concluido' | 'parcial' | 'falhou';
 export type StatusExportacao = 'agendada' | 'processando' | 'concluida' | 'falhou';
 export type PapelAtribuicao = 'titular' | 'substituto';
@@ -390,6 +391,19 @@ export interface Convite {
   created_at: string;
 }
 
+export interface CodigoRedefinicao {
+  id: string;
+  email: string;
+  perfil_id: string;
+  codigo: string;
+  criado_por: string | null;
+  usado_em: string | null;
+  revogado_em: string | null;
+  expira_em: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // -------- Supabase Database Type Map --------
 export interface Database {
   public: {
@@ -538,6 +552,11 @@ export interface Database {
         Row: Convite;
         Insert: Omit<Convite, 'id' | 'created_at'>;
         Update: Partial<Omit<Convite, 'id'>>;
+      };
+      codigos_redefinicao: {
+        Row: CodigoRedefinicao;
+        Insert: Omit<CodigoRedefinicao, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<CodigoRedefinicao, 'id'>>;
       };
     };
   };

@@ -64,13 +64,19 @@ onUnmounted(() => {
 
 <template>
   <div class="container py-4" style="max-width: 800px">
-    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" @click="router.back()">
-      <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
-      Voltar
-    </button>
+    <div class="d-flex gap-2 mb-3">
+      <router-link to="/responsavel" class="btn btn-sm btn-outline-success">
+        <i class="bi bi-house me-1" aria-hidden="true"></i>
+        Início
+      </router-link>
+      <button type="button" class="btn btn-sm btn-outline-secondary" @click="router.back()">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Voltar
+      </button>
+    </div>
 
     <h1 class="h5 fw-bold mb-3">
-      <i class="bi bi-chat-dots text-primary me-2" aria-hidden="true"></i>
+      <i class="bi bi-chat-dots text-success me-2" aria-hidden="true"></i>
       Falar com a coordenação
     </h1>
 

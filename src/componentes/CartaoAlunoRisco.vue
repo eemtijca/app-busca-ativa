@@ -86,7 +86,7 @@ const inicialAluno = computed(() =>
         <button
           type="button"
           class="btn btn-sm flex-shrink-0"
-          :class="aluno.nivel === 'alto' ? 'btn-danger' : 'btn-outline-primary'"
+          :class="aluno.nivel === 'alto' ? 'btn-danger' : 'btn-outline-success'"
           @click="emit('contatar', aluno.id)"
         >
           <i class="bi bi-telephone me-1" aria-hidden="true"></i>

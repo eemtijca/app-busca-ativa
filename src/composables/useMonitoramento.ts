@@ -5,6 +5,7 @@ import type {
   Frequencia,
   Ocorrencia,
   Perfil,
+  Turma,
   VinculoResponsavel,
   JustificativaFalta,
 } from '@/tipos/database';
@@ -21,13 +22,6 @@ import type {
   HorarioProtegido,
 } from '@/tipos/componentes';
 
-/**
- * Calcula o nível de risco com base em ausências e ocorrências.
- * Regras de negócio (alinhadas ao README):
- *   - alto (crítico): >= 5 ausências OU >= 1 ocorrência grave/suspensão
- *   - medio (atenção): 3-4 ausências
- *   - baixo (estável): 0-2 ausências
- */
 function calcularNivelRisco(totalAusencias: number, totalOcorrencias: number): NivelRisco {
   if (totalAusencias >= 5 || totalOcorrencias >= 1) return 'alto';
   if (totalAusencias >= 3) return 'medio';
@@ -69,32 +63,83 @@ export function useMonitoramento() {
   const carregando: Ref<boolean> = ref(false);
   const erro: Ref<string | null> = ref(null);
 
-  /**
-   * buscarAlunosParaFrequencia - Busca a lista de alunos para o
-   * professor registrar frequência por exceção. Não filtra por
-   * professor específico (a RLS do Supabase garante que o
-   * professor só veja alunos das turmas que lecione).
-   */
-  async function buscarAlunosParaFrequencia(): Promise<AlunoFrequencia[]> {
+  async function buscarAlunosParaFrequencia(dataAula?: string): Promise<AlunoFrequencia[]> {
     carregando.value = true;
     erro.value = null;
     try {
-      const { data, error: err } = await supabaseClient
+      const { data: alunosData, error: errAlunos } = await supabaseClient
         .from('alunos')
         .select('*')
         .order('nome', { ascending: true });
 
-      if (err) throw err;
+      if (errAlunos) throw errAlunos;
 
-      const alunos = (data ?? []) as unknown as Aluno[];
-      return alunos.map((aluno) => ({
-        id: aluno.id,
-        nome: aluno.nome,
-        matricula: aluno.matricula,
-        turma: null,
-        ausente: false,
-        periodosAusentes: [],
-      }));
+      const alunos = (alunosData ?? []) as unknown as Aluno[];
+      const alunoIds = alunos.map((a) => a.id);
+
+      const { data: enturmacoesData } = await supabaseClient
+        .from('enturmacoes')
+        .select('aluno_id, turma_id, ano_letivo_id')
+        .in('aluno_id', alunoIds)
+        .eq('status', 'matriculado');
+
+      const enturmacoes = (enturmacoesData ?? []) as unknown as Array<{
+        aluno_id: string;
+        turma_id: string;
+        ano_letivo_id: string;
+      }>;
+
+      const turmaIds = [...new Set(enturmacoes.map((e) => e.turma_id))];
+      const { data: turmasData } = await supabaseClient
+        .from('turmas')
+        .select('id, nome_completo')
+        .in('id', turmaIds);
+
+      const turmaNomeMap = new Map(
+        (turmasData ?? []).map((t: unknown) => [(t as Turma).id, (t as Turma).nome_completo]),
+      );
+
+      const enturmacaoAlunoMap = new Map(
+        enturmacoes.map((e) => [
+          e.aluno_id,
+          { turma_id: e.turma_id, ano_letivo_id: e.ano_letivo_id },
+        ]),
+      );
+
+      const ausentesSet = new Set<string>();
+      const periodosAluno = new Map<string, string[]>();
+
+      if (dataAula) {
+        const { data: ausencias } = await supabaseClient
+          .from('frequencias')
+          .select('aluno_id, periodo')
+          .in('aluno_id', alunoIds)
+          .eq('data_aula', dataAula)
+          .eq('tipo_registro', 'chamada_aula')
+          .eq('status', 'ausente')
+          .is('deleted_at', null);
+
+        for (const a of ausencias ?? []) {
+          const id = (a as unknown as { aluno_id: string }).aluno_id;
+          const p = (a as unknown as { periodo: string }).periodo;
+          ausentesSet.add(id);
+          if (!periodosAluno.has(id)) periodosAluno.set(id, []);
+          periodosAluno.get(id)!.push(p);
+        }
+      }
+
+      return alunos.map((aluno) => {
+        const ent = enturmacaoAlunoMap.get(aluno.id);
+        return {
+          id: aluno.id,
+          nome: aluno.nome,
+          matricula: aluno.matricula,
+          turma: ent ? (turmaNomeMap.get(ent.turma_id) ?? null) : null,
+          turma_id: ent?.turma_id ?? null,
+          ausente: ausentesSet.has(aluno.id),
+          periodosAusentes: periodosAluno.get(aluno.id) ?? [],
+        };
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error('[useMonitoramento] Erro ao buscar alunos:', msg);
@@ -119,13 +164,35 @@ export function useMonitoramento() {
         return { registradas: 0, erro: null };
       }
 
+      const { data: anoLetivo } = await supabaseClient
+        .from('anos_letivos')
+        .select('id')
+        .eq('ativo', true)
+        .single();
+
+      if (!anoLetivo) throw new Error('Nenhum ano letivo ativo encontrado.');
+      const anoLetivoId = (anoLetivo as unknown as { id: string }).id;
+
       const insercoes = ausentes.map((aluno) => ({
         aluno_id: aluno.id,
         professor_id: professorId,
+        turma_id: aluno.turma_id,
+        ano_letivo_id: anoLetivoId,
         data_aula: dataAula,
         periodo,
+        tipo_registro: 'chamada_aula' as const,
         status: 'ausente' as const,
       }));
+
+      const ausentesIds = ausentes.map((a) => a.id);
+      await supabaseClient
+        .from('frequencias')
+        .delete()
+        .in('aluno_id', ausentesIds)
+        .eq('data_aula', dataAula)
+        .eq('periodo', periodo)
+        .eq('tipo_registro', 'chamada_aula')
+        .is('deleted_at', null);
 
       const { error: err } = await supabaseClient.from('frequencias').insert(insercoes);
 
@@ -152,11 +219,34 @@ export function useMonitoramento() {
     carregando.value = true;
     erro.value = null;
     try {
+      const { data: enturmacao } = await supabaseClient
+        .from('enturmacoes')
+        .select('turma_id, ano_letivo_id')
+        .eq('aluno_id', alunoId)
+        .eq('status', 'matriculado')
+        .single();
+
+      if (!enturmacao) throw new Error('Aluno nao encontrado em nenhuma turma.');
+      const tId = (enturmacao as unknown as { turma_id: string }).turma_id;
+      const aId = (enturmacao as unknown as { ano_letivo_id: string }).ano_letivo_id;
+
+      await supabaseClient
+        .from('frequencias')
+        .delete()
+        .eq('aluno_id', alunoId)
+        .eq('data_aula', dataAula)
+        .eq('periodo', periodo)
+        .eq('tipo_registro', 'chamada_aula')
+        .is('deleted_at', null);
+
       const { error: err } = await supabaseClient.from('frequencias').insert({
         aluno_id: alunoId,
         professor_id: professorId,
+        turma_id: tId,
+        ano_letivo_id: aId,
         data_aula: dataAula,
         periodo,
+        tipo_registro: 'chamada_aula',
         status: 'ausente',
       });
 
@@ -268,7 +358,6 @@ export function useMonitoramento() {
         };
       });
 
-      // Ordena: crítico primeiro, depois por total de ausências
       const ordemNivel: Record<NivelRisco, number> = { alto: 0, medio: 1, baixo: 2 };
       ranking.sort((a, b) => {
         const diffNivel = ordemNivel[a.nivel] - ordemNivel[b.nivel];
@@ -291,7 +380,6 @@ export function useMonitoramento() {
     carregando.value = true;
     erro.value = null;
     try {
-      // Busca ocorrências com join implícito em alunos via duas queries
       const { data: ocoData, error: err } = await supabaseClient
         .from('ocorrencias')
         .select('*')
@@ -426,9 +514,6 @@ export function useMonitoramento() {
     }
   }
 
-  /**
-   * Estatísticas do Painel Confidencial a partir de listas já carregadas.
-   */
   function calcularEstatisticasPainel(
     ranking: AlunoRisco[],
     ocorrencias: OcorrenciaGrave[],
@@ -671,17 +756,7 @@ export function useMonitoramento() {
     }
   }
 
-  /**
-   * buscarMensagensChat - Busca o histórico de mensagens do
-   * canal de diálogo. Como a tabela atual não possui uma tabela
-   * de mensagens, retorna [] em produção até que seja migrada.
-   *
-   * NOTA: Em uma versão futura, criar tabela `mensagens_chat`
-   * com RLS para que cada responsável veja apenas suas mensagens.
-   */
   async function buscarMensagensChat(_responsavelId: string): Promise<MensagemChat[]> {
-    // Tabela ainda não existe no schema. Retorna lista vazia
-    // para que o componente exiba o estado "sem mensagens".
     return [];
   }
 

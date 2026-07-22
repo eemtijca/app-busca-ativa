@@ -1,3 +1,5 @@
+import type { PapelPerfil, StatusPerfil, StatusAluno } from './database';
+
 export interface LinkNav {
   rotulo: string;
   url: string;
@@ -125,6 +127,7 @@ export interface AlunoFrequencia {
   nome: string;
   matricula: string;
   turma: string | null;
+  turma_id: string | null;
   /**
    * true = ausente (marcado pelo professor).
    * false = presente (padrão assumido pelo sistema).
@@ -245,4 +248,84 @@ export interface HorarioProtegido {
   fim: string; // formato "HH:MM"
   diasSemana: number[]; // 0 (Dom) a 6 (Sáb)
   mensagemForaHorario: string;
+}
+
+/**
+ * Item de usuario para listagem na gestao.
+ */
+export interface UsuarioItem {
+  id: string;
+  nome: string;
+  email: string | null;
+  papel: PapelPerfil;
+  status: StatusPerfil;
+  telefone: string | null;
+  cargo: string | null;
+  ultimo_acesso: string | null;
+}
+
+/**
+ * Item de aluno para listagem na gestao.
+ */
+export interface AlunoItem {
+  id: string;
+  nome: string;
+  matricula: string;
+  turma: string | null;
+  status: StatusAluno;
+  data_nascimento: string | null;
+}
+
+/**
+ * Solicitacao de codigo de redefinicao pendente.
+ */
+export interface SolicitacaoCodigo {
+  id: string;
+  email: string;
+  perfil_id: string;
+  nome: string;
+  papel: PapelPerfil;
+  criado_em: string;
+}
+
+/**
+ * Codigo de redefinicao gerado (para exibicao na listagem).
+ */
+export interface CodigoGerado {
+  id: string;
+  email: string;
+  nome: string;
+  codigo: string;
+  criado_por_nome: string | null;
+  usado_em: string | null;
+  revogado_em: string | null;
+  expira_em: string;
+  criado_em: string;
+  status: 'ativo' | 'usado' | 'expirado';
+}
+
+/**
+ * Dados para criacao de usuario.
+ */
+export interface DadosCriacaoUsuario {
+  nome: string;
+  email: string;
+  papel: PapelPerfil;
+  telefone?: string;
+  cargo?: string;
+}
+
+/**
+ * Dados para criacao de aluno.
+ */
+export interface DadosCriacaoAluno {
+  nome: string;
+  matricula: string;
+  data_nascimento?: string;
+  observacoes?: string;
+  turma_id?: string;
+  responsavel_nome?: string;
+  responsavel_email?: string;
+  responsavel_telefone?: string;
+  tipo_vinculo?: string;
 }

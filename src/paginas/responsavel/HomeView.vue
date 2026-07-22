@@ -10,7 +10,7 @@ const nomeResponsavel = usuario.value?.nome || 'Responsável';
   <div class="container py-4 py-md-5" style="max-width: 800px">
     <div class="text-center mb-4 mb-md-5">
       <span
-        class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary mb-3"
+        class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle text-success mb-3"
         style="width: 64px; height: 64px; font-size: 1.75rem"
       >
         <i class="bi bi-house-heart" aria-hidden="true"></i>
@@ -22,25 +22,25 @@ const nomeResponsavel = usuario.value?.nome || 'Responsável';
     </div>
 
     <div class="row g-3 justify-content-center">
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-md-6 col-lg-4">
         <CartaoNavegacao
           icone="bell"
           titulo="Alertas"
           descricao="Veja notificações de ausência e comunicados importantes."
           rota="/responsavel/alertas"
-          cor="danger"
+          cor="success"
         />
       </div>
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-md-6 col-lg-4">
         <CartaoNavegacao
           icone="thermometer-half"
           titulo="Termômetro"
           descricao="Acompanhe o nível de atenção da frequência do seu filho."
           rota="/responsavel/termometro"
-          cor="warning"
+          cor="success"
         />
       </div>
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-md-6 col-lg-4">
         <CartaoNavegacao
           icone="paperclip"
           titulo="Justificativa"
@@ -49,13 +49,13 @@ const nomeResponsavel = usuario.value?.nome || 'Responsável';
           cor="success"
         />
       </div>
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-md-6 col-lg-4">
         <CartaoNavegacao
           icone="chat-dots"
           titulo="Falar com coordenação"
           descricao="Converse com a equipe escolar dentro do horário protegido."
           rota="/responsavel/chat"
-          cor="primary"
+          cor="success"
         />
       </div>
     </div>
