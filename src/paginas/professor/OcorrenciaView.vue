@@ -45,14 +45,20 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="container py-4" style="max-width: 640px">
-    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" @click="router.back()">
-      <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
-      Voltar
-    </button>
+  <div class="container py-4" style="max-width: 800px">
+    <div class="d-flex gap-2 mb-3">
+      <router-link to="/professor" class="btn btn-sm btn-outline-success">
+        <i class="bi bi-house me-1" aria-hidden="true"></i>
+        Início
+      </router-link>
+      <button type="button" class="btn btn-sm btn-outline-secondary" @click="router.back()">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Voltar
+      </button>
+    </div>
 
     <h1 class="h5 fw-bold mb-3">
-      <i class="bi bi-exclamation-triangle text-danger me-2" aria-hidden="true"></i>
+      <i class="bi bi-exclamation-triangle text-success me-2" aria-hidden="true"></i>
       Registrar ocorrência grave
     </h1>
 
@@ -71,8 +77,8 @@ onMounted(async () => {
     <div class="card border">
       <div class="card-body">
         <div class="mb-3">
-          <label for="alunoSelect" class="form-label fw-semibold small">Aluno</label>
-          <select id="alunoSelect" v-model="alunoId" class="form-select" :disabled="!alunos.length">
+          <label for="alunoSelect" class="form-label fw-medium small">Aluno</label>
+          <select id="alunoSelect" v-model="alunoId" class="form-select form-select-sm" :disabled="!alunos.length">
             <option value="" disabled>Selecione um aluno</option>
             <option v-for="a in alunos" :key="a.id" :value="a.id">
               {{ a.nome }} — {{ a.turma || 'Sem turma' }}
@@ -81,7 +87,7 @@ onMounted(async () => {
         </div>
 
         <div class="mb-3">
-          <label class="form-label fw-semibold small">Tipo de ocorrência</label>
+          <label class="form-label fw-medium small">Tipo de ocorrência</label>
           <div class="d-flex gap-3">
             <div class="form-check">
               <input
@@ -107,11 +113,11 @@ onMounted(async () => {
         </div>
 
         <div class="mb-3">
-          <label for="descricaoText" class="form-label fw-semibold small">Descrição</label>
+          <label for="descricaoText" class="form-label fw-medium small">Descrição</label>
           <textarea
             id="descricaoText"
             v-model="descricao"
-            class="form-control"
+            class="form-control form-control-sm"
             rows="4"
             placeholder="Descreva objetivamente o comportamento. Mínimo 10 caracteres."
           ></textarea>
@@ -129,13 +135,13 @@ onMounted(async () => {
           </label>
         </div>
 
-        <div class="d-flex gap-2">
-          <button type="button" class="btn btn-outline-secondary" @click="router.back()">
+        <div class="d-flex gap-2 justify-content-end">
+          <button type="button" class="btn btn-sm btn-outline-secondary" @click="router.back()">
             Cancelar
           </button>
           <button
             type="button"
-            class="btn btn-danger"
+            class="btn btn-sm btn-success"
             :disabled="carregando || !alunoId"
             @click="confirmar"
           >
@@ -145,7 +151,7 @@ onMounted(async () => {
               role="status"
             ></span>
             <i v-else class="bi bi-exclamation-octagon me-1" aria-hidden="true"></i>
-            Registrar ocorrência
+            Registrar
           </button>
         </div>
       </div>

@@ -55,11 +55,17 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="container py-4" style="max-width: 640px">
-    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" @click="router.back()">
-      <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
-      Voltar
-    </button>
+  <div class="container py-4" style="max-width: 800px">
+    <div class="d-flex gap-2 mb-3">
+      <router-link to="/responsavel" class="btn btn-sm btn-outline-success">
+        <i class="bi bi-house me-1" aria-hidden="true"></i>
+        Início
+      </router-link>
+      <button type="button" class="btn btn-sm btn-outline-secondary" @click="router.back()">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Voltar
+      </button>
+    </div>
 
     <h1 class="h5 fw-bold mb-3">
       <i class="bi bi-paperclip text-success me-2" aria-hidden="true"></i>
@@ -92,12 +98,7 @@ onMounted(async () => {
           :enviando="enviando"
           @enviar="handleEnviarJustificativa"
         />
-        <div class="d-flex gap-2 mt-3">
-          <button type="button" class="btn btn-outline-secondary" @click="router.back()">
-            Cancelar
-          </button>
         </div>
-      </div>
     </div>
   </div>
 </template>

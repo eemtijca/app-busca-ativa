@@ -314,7 +314,7 @@ async function salvar() {
 
 <template>
   <div class="container py-4" style="max-width: 960px">
-    <router-link to="/gestao" class="btn btn-sm btn-outline-primary me-2 mb-3">
+    <router-link to="/gestao" class="btn btn-sm btn-outline-success me-2 mb-3">
       <i class="bi bi-house me-1" aria-hidden="true"></i>
       Início
     </router-link>
@@ -545,7 +545,7 @@ async function salvar() {
           <button
             v-if="!alterarEnturmacao"
             type="button"
-            class="btn btn-sm btn-outline-primary"
+            class="btn btn-sm btn-outline-success"
             @click="alterarEnturmacao = true"
           >
             <i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>
@@ -572,10 +572,10 @@ async function salvar() {
                 autocomplete="off"
               />
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 justify-content-end">
               <button
                 type="button"
-                class="btn btn-sm btn-primary"
+                class="btn btn-sm btn-success"
                 :disabled="salvando"
                 @click="salvarAlterarEnturmacao"
               >
@@ -630,7 +630,7 @@ async function salvar() {
           <button
             v-if="!adicionarResponsavel"
             type="button"
-            class="btn btn-sm btn-outline-primary"
+            class="btn btn-sm btn-outline-success"
             @click="adicionarResponsavel = true"
           >
             <i class="bi bi-person-plus me-1" aria-hidden="true"></i>
@@ -718,10 +718,10 @@ async function salvar() {
               </div>
             </template>
 
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 justify-content-end">
               <button
                 type="button"
-                class="btn btn-sm btn-primary"
+                class="btn btn-sm btn-success"
                 :disabled="salvando"
                 @click="salvarNovoResponsavel"
               >
@@ -746,8 +746,11 @@ async function salvar() {
         </div>
       </div>
 
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-sm btn-primary" :disabled="salvando || carregando">
+      <div class="d-flex gap-2 justify-content-end">
+        <router-link to="/gestao/alunos" class="btn btn-sm btn-outline-secondary"
+          >Cancelar</router-link
+        >
+        <button type="submit" class="btn btn-sm btn-success" :disabled="salvando || carregando">
           <span
             v-if="salvando"
             class="spinner-border spinner-border-sm me-1"
@@ -757,9 +760,6 @@ async function salvar() {
           <i v-else class="bi bi-check-lg me-1" aria-hidden="true"></i>
           {{ modoEdicao ? 'Salvar alterações' : 'Criar aluno' }}
         </button>
-        <router-link to="/gestao/alunos" class="btn btn-sm btn-outline-secondary"
-          >Cancelar</router-link
-        >
       </div>
     </form>
   </div>

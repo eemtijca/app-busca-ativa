@@ -54,7 +54,7 @@ const rotuloTipo: Record<OcorrenciaGrave['tipo'], string> = {
         </span>
       </div>
 
-      <div class="d-flex flex-wrap gap-2">
+      <div class="d-flex flex-wrap gap-2 justify-content-end">
         <button
           v-if="oc.anexoUrl"
           type="button"

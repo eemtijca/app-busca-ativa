@@ -308,7 +308,7 @@ onUnmounted(() => {
 
 <template>
   <div class="container py-4" style="max-width: 960px">
-    <router-link to="/gestao" class="btn btn-sm btn-outline-primary me-2 mb-3">
+    <router-link to="/gestao" class="btn btn-sm btn-outline-success me-2 mb-3">
       <i class="bi bi-house me-1" aria-hidden="true"></i>
       Início
     </router-link>
@@ -319,7 +319,7 @@ onUnmounted(() => {
 
     <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
       <h1 class="h5 fw-bold mb-0">
-        <i class="bi bi-key text-warning me-2" aria-hidden="true"></i>
+        <i class="bi bi-key text-success me-2" aria-hidden="true"></i>
         Códigos de acesso
       </h1>
       <div class="d-flex align-items-center gap-2">
@@ -340,7 +340,7 @@ onUnmounted(() => {
           Atualizar
         </button>
         <span
-          class="rounded-circle d-inline-block ms-2"
+          class="rounded-circle d-inline-block"
           :class="statusConexao === 'conectado' ? 'bg-success' : 'bg-danger'"
           style="width: 8px; height: 8px"
           :title="statusConexao === 'conectado' ? 'Conectado' : 'Desconectado'"
@@ -433,7 +433,7 @@ onUnmounted(() => {
               </div>
               <button
                 type="button"
-                class="btn btn-sm btn-warning text-nowrap"
+                class="btn btn-sm btn-success text-nowrap"
                 :disabled="gerandoCodigo && solicitacaoSelecionada?.id === s.id"
                 @click="abrirConfirmacaoGerar(s)"
               >
@@ -641,7 +641,7 @@ onUnmounted(() => {
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title small fw-bold">
-              <i class="bi bi-shield-exclamation text-warning me-1" aria-hidden="true"></i>
+              <i class="bi bi-shield-exclamation text-success me-1" aria-hidden="true"></i>
               Confirmar geração
             </h5>
             <button
@@ -669,7 +669,7 @@ onUnmounted(() => {
             >
               Cancelar
             </button>
-            <button type="button" class="btn btn-sm btn-warning" @click="confirmarGerar">
+            <button type="button" class="btn btn-sm btn-success" @click="confirmarGerar">
               <i class="bi bi-key me-1" aria-hidden="true"></i>
               Sim, gerar
             </button>
@@ -688,7 +688,7 @@ onUnmounted(() => {
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title small fw-bold">
-              <i class="bi bi-key text-warning me-1" aria-hidden="true"></i>
+              <i class="bi bi-key text-success me-1" aria-hidden="true"></i>
               Código gerado
             </h5>
             <button
@@ -728,7 +728,7 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-sm btn-primary" @click="fecharModalCodigo">
+            <button type="button" class="btn btn-sm btn-success" @click="fecharModalCodigo">
               Concluído
             </button>
           </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 withDefaults(
   defineProps<{
@@ -14,6 +15,7 @@ withDefaults(
   },
 );
 
+const router = useRouter();
 const emit = defineEmits<{
   enviar: [payload: { motivo: string; dataAusencia: string; arquivo: File | null }];
 }>();
@@ -78,36 +80,36 @@ function submeter() {
 <template>
   <form @submit.prevent="submeter" novalidate>
     <div v-if="alunoNome" class="alert alert-light border d-flex align-items-center gap-2 mb-3">
-      <i class="bi bi-person-badge text-primary fs-5" aria-hidden="true"></i>
+      <i class="bi bi-person-badge text-success fs-5" aria-hidden="true"></i>
       <div>
-        <div class="fw-semibold">{{ alunoNome }}</div>
+        <div class="fw-medium small">{{ alunoNome }}</div>
         <small v-if="alunoTurma" class="text-body-secondary">{{ alunoTurma }}</small>
       </div>
     </div>
 
-    <div v-if="erroValidacao" class="alert alert-danger d-flex align-items-center" role="alert">
+    <div v-if="erroValidacao" class="alert alert-danger d-flex align-items-center py-2 small mb-3" role="alert">
       <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
       <span>{{ erroValidacao }}</span>
     </div>
 
     <div class="mb-3">
-      <label for="dataAusencia" class="form-label fw-semibold">Data da ausência</label>
+      <label for="dataAusencia" class="form-label fw-medium small">Data da ausência</label>
       <input
         id="dataAusencia"
         v-model="dataAusencia"
         type="date"
-        class="form-control form-control-lg"
+        class="form-control form-control-sm"
         :disabled="enviando"
         required
       />
     </div>
 
     <div class="mb-3">
-      <label for="motivo" class="form-label fw-semibold">Motivo da ausência</label>
+      <label for="motivo" class="form-label fw-medium small">Motivo da ausência</label>
       <textarea
         id="motivo"
         v-model="motivo"
-        class="form-control"
+        class="form-control form-control-sm"
         rows="3"
         placeholder="Ex.: Ateste médico, consulta, falecimento na família..."
         :disabled="enviando"
@@ -116,16 +118,16 @@ function submeter() {
     </div>
 
     <div class="mb-3">
-      <label class="form-label fw-semibold">Anexar atestado ou comprovante</label>
+      <label class="form-label fw-medium small">Anexar atestado ou comprovante</label>
       <div
         v-if="!arquivo"
-        class="border border-2 border-dashed rounded-3 p-4 text-center text-body-secondary"
+        class="border border-2 border-dashed rounded-3 p-3 text-center text-body-secondary"
       >
-        <i class="bi bi-cloud-arrow-up fs-1 d-block mb-2" aria-hidden="true"></i>
+        <i class="bi bi-cloud-arrow-up fs-4 d-block mb-2" aria-hidden="true"></i>
         <p class="mb-2 small">Toque para escolher uma foto ou documento do celular.</p>
         <label
           for="inputArquivoJustificativa"
-          class="btn btn-success btn-lg"
+          class="btn btn-success btn-sm"
           :class="{ disabled: enviando }"
         >
           <i class="bi bi-camera me-2" aria-hidden="true"></i>
@@ -142,10 +144,10 @@ function submeter() {
         <small class="d-block mt-2">Aceita imagem ou PDF até 5 MB.</small>
       </div>
 
-      <div v-else class="alert alert-success d-flex align-items-center gap-2 mb-0">
-        <i class="bi bi-file-earmark-check fs-4" aria-hidden="true"></i>
+      <div v-else class="alert alert-success d-flex align-items-center gap-2 mb-0 py-2 small">
+        <i class="bi bi-file-earmark-check fs-5" aria-hidden="true"></i>
         <div class="flex-grow-1 min-w-0">
-          <div class="fw-semibold text-truncate">{{ nomeArquivo }}</div>
+          <div class="fw-medium text-truncate">{{ nomeArquivo }}</div>
           <small class="text-body-secondary">{{ tamanhoArquivo }}</small>
         </div>
         <button
@@ -160,16 +162,19 @@ function submeter() {
       </div>
     </div>
 
-    <button type="submit" class="btn btn-primary btn-lg w-100" :disabled="enviando">
-      <span
-        v-if="enviando"
-        class="spinner-border spinner-border-sm me-2"
-        role="status"
-        aria-hidden="true"
-      ></span>
-      <i v-else class="bi bi-send me-2" aria-hidden="true"></i>
-      {{ enviando ? 'Enviando...' : 'Enviar justificativa' }}
-    </button>
+    <div class="d-flex gap-2 justify-content-end">
+      <button type="button" class="btn btn-sm btn-outline-secondary" @click="router.back()">Cancelar</button>
+      <button type="submit" class="btn btn-sm btn-success" :disabled="enviando">
+        <span
+          v-if="enviando"
+          class="spinner-border spinner-border-sm me-1"
+          role="status"
+          aria-hidden="true"
+        ></span>
+        <i v-else class="bi bi-send me-1" aria-hidden="true"></i>
+        {{ enviando ? 'Enviando...' : 'Enviar' }}
+      </button>
+    </div>
   </form>
 </template>
 

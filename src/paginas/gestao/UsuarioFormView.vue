@@ -172,7 +172,7 @@ async function salvar() {
 
 <template>
   <div class="container py-4" style="max-width: 960px">
-    <router-link to="/gestao" class="btn btn-sm btn-outline-primary me-2 mb-3">
+    <router-link to="/gestao" class="btn btn-sm btn-outline-success me-2 mb-3">
       <i class="bi bi-house me-1" aria-hidden="true"></i>
       Início
     </router-link>
@@ -239,7 +239,7 @@ async function salvar() {
         <p class="small text-body-secondary mb-3">
           Acesse a tela de códigos para gerar um código de acesso.
         </p>
-        <router-link to="/gestao/codigos" class="btn btn-primary mb-3">
+        <router-link to="/gestao/codigos" class="btn btn-success btn-sm mb-3">
           <i class="bi bi-key me-1" aria-hidden="true"></i>
           Ir para códigos
         </router-link>
@@ -387,8 +387,11 @@ async function salvar() {
         </div>
       </div>
 
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-sm btn-primary" :disabled="salvando || carregando">
+      <div class="d-flex gap-2 justify-content-end">
+        <router-link to="/gestao/usuarios" class="btn btn-sm btn-outline-secondary"
+          >Cancelar</router-link
+        >
+        <button type="submit" class="btn btn-sm btn-success" :disabled="salvando || carregando">
           <span
             v-if="salvando"
             class="spinner-border spinner-border-sm me-1"
@@ -398,9 +401,6 @@ async function salvar() {
           <i v-else class="bi bi-check-lg me-1" aria-hidden="true"></i>
           {{ modoEdicao ? 'Salvar alterações' : 'Criar usuário' }}
         </button>
-        <router-link to="/gestao/usuarios" class="btn btn-sm btn-outline-secondary"
-          >Cancelar</router-link
-        >
       </div>
     </form>
   </div>

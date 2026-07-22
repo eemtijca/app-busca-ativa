@@ -135,7 +135,7 @@ onMounted(carregarTurmas);
 
 <template>
   <div class="container py-4" style="max-width: 960px">
-    <router-link to="/gestao" class="btn btn-sm btn-outline-primary me-2 mb-3">
+    <router-link to="/gestao" class="btn btn-sm btn-outline-success me-2 mb-3">
       <i class="bi bi-house me-1" aria-hidden="true"></i>
       Início
     </router-link>
@@ -146,10 +146,10 @@ onMounted(carregarTurmas);
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
       <h1 class="h5 fw-bold mb-0">
-        <i class="bi bi-book text-primary me-2" aria-hidden="true"></i>
+        <i class="bi bi-book text-success me-2" aria-hidden="true"></i>
         Turmas
       </h1>
-      <button type="button" class="btn btn-sm btn-primary" @click="abrirNovo">
+      <button type="button" class="btn btn-sm btn-success" @click="abrirNovo">
         <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
         Nova turma
       </button>
@@ -209,7 +209,7 @@ onMounted(carregarTurmas);
                 <div class="d-flex gap-1 justify-content-end">
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-primary"
+                    class="btn btn-sm btn-outline-success"
                     @click="abrirEditar(turma)"
                   >
                     <i class="bi bi-pencil" aria-hidden="true"></i>
@@ -303,7 +303,7 @@ onMounted(carregarTurmas);
               >
                 Cancelar
               </button>
-              <button type="submit" class="btn btn-sm btn-primary" :disabled="carregando">
+              <button type="submit" class="btn btn-sm btn-success" :disabled="carregando">
                 <span
                   v-if="carregando"
                   class="spinner-border spinner-border-sm me-1"

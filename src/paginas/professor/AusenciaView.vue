@@ -42,14 +42,20 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="container py-4" style="max-width: 640px">
-    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" @click="router.back()">
-      <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
-      Voltar
-    </button>
+  <div class="container py-4" style="max-width: 800px">
+    <div class="d-flex gap-2 mb-3">
+      <router-link to="/professor" class="btn btn-sm btn-outline-success">
+        <i class="bi bi-house me-1" aria-hidden="true"></i>
+        Início
+      </router-link>
+      <button type="button" class="btn btn-sm btn-outline-secondary" @click="router.back()">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Voltar
+      </button>
+    </div>
 
     <h1 class="h5 fw-bold mb-3">
-      <i class="bi bi-clock-history text-warning me-2" aria-hidden="true"></i>
+      <i class="bi bi-clock-history text-success me-2" aria-hidden="true"></i>
       Registrar ausência em aula
     </h1>
 
@@ -65,8 +71,8 @@ onMounted(async () => {
     <div class="card border">
       <div class="card-body">
         <div class="mb-3">
-          <label for="alunoSelect" class="form-label fw-semibold small">Aluno</label>
-          <select id="alunoSelect" v-model="alunoId" class="form-select">
+          <label for="alunoSelect" class="form-label fw-medium small">Aluno</label>
+          <select id="alunoSelect" v-model="alunoId" class="form-select form-select-sm">
             <option value="" disabled>Selecione um aluno</option>
             <option v-for="a in alunos" :key="a.id" :value="a.id">
               {{ a.nome }} — {{ a.turma || 'Sem turma' }}
@@ -75,34 +81,34 @@ onMounted(async () => {
         </div>
 
         <div class="mb-3">
-          <label for="periodoSelect" class="form-label fw-semibold small"
+          <label for="periodoSelect" class="form-label fw-medium small"
             >Período da ausência</label
           >
-          <select id="periodoSelect" v-model="periodo" class="form-select">
+          <select id="periodoSelect" v-model="periodo" class="form-select form-select-sm">
             <option v-for="p in periodosAula" :key="p" :value="p">{{ p }}</option>
           </select>
         </div>
 
         <div class="mb-3">
-          <label for="justificativaText" class="form-label fw-semibold small"
+          <label for="justificativaText" class="form-label fw-medium small"
             >Justificativa (opcional)</label
           >
           <textarea
             id="justificativaText"
             v-model="justificativa"
-            class="form-control"
+            class="form-control form-control-sm"
             rows="3"
             placeholder="Ex.: Encaminhado à enfermaria..."
           ></textarea>
         </div>
 
-        <div class="d-flex gap-2">
-          <button type="button" class="btn btn-outline-secondary" @click="router.back()">
+        <div class="d-flex gap-2 justify-content-end">
+          <button type="button" class="btn btn-sm btn-outline-secondary" @click="router.back()">
             Cancelar
           </button>
           <button
             type="button"
-            class="btn btn-warning"
+            class="btn btn-sm btn-success"
             :disabled="carregando || !alunoId"
             @click="confirmar"
           >
@@ -112,7 +118,7 @@ onMounted(async () => {
               role="status"
             ></span>
             <i v-else class="bi bi-save me-1" aria-hidden="true"></i>
-            Registrar ausência
+            Registrar
           </button>
         </div>
       </div>
