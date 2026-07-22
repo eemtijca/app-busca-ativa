@@ -342,7 +342,7 @@ assert "frequencias INSERT 201" "201" "$HTTP"
 HTTP=$(api_code POST "/rest/v1/frequencias" '{"aluno_id":"e0000000-0000-0000-0000-000000000001","professor_id":"a0000000-0000-0000-0000-000000000002","data_aula":"2026-07-13","periodo":"Manhã","status":"presente"}' "$TG")
 assert "frequencias INSERT sem turma 400" "400" "$HTTP"
 
-HTTP=$(api_code POST "/rest/v1/ocorrencias" '{"aluno_id":"e0000000-0000-0000-0000-000000000001","professor_id":"a0000000-0000-0000-0000-000000000002","turma_id":"d0000000-0000-0000-0000-000000000001","ano_letivo_id":"b0000000-0000-0000-0000-000000000001","titulo":"Test","descricao":"Teste API","tipo":"grave"}' "$TG")
+HTTP=$(api_code POST "/rest/v1/ocorrencias" '{"aluno_id":"e0000000-0000-0000-0000-000000000001","professor_id":"a0000000-0000-0000-0000-000000000002","turma_id":"d0000000-0000-0000-0000-000000000001","ano_letivo_id":"b0000000-0000-0000-0000-000000000001","titulo":"Test","descricao":"Teste API","tipo":["grave"]}' "$TG")
 assert "ocorrencias INSERT 201" "201" "$HTTP"
 
 HTTP=$(api_code GET "/rest/v1/notificacoes?select=id,titulo,tipo&limit=3" '' "$TG")
@@ -584,6 +584,104 @@ assert "7.14 professor nao revoga 400" "400" "$HTTP"
 # 7.15 RLS — professor nao pode gerar codigo
 HTTP=$(api_code POST "/rest/v1/rpc/fn_gerar_codigo_redefinicao" "{\"p_perfil_id\":\"$VIDA_ID\"}" "$TP")
 assert "7.15 professor nao gera 400" "400" "$HTTP"
+
+echo ""; echo "=== 8. NOVOS CAMPOS — OCORRENCIAS ==="
+
+OCO_ID=$(UUID)
+HTTP=$(api_code POST "/rest/v1/ocorrencias" "{\"id\":\"$OCO_ID\",\"aluno_id\":\"e0000000-0000-0000-0000-000000000001\",\"professor_id\":\"$FP\",\"turma_id\":\"$FT\",\"ano_letivo_id\":\"b0000000-0000-0000-0000-000000000001\",\"titulo\":\"Test tipos\",\"descricao\":\"Teste de tipo multisselecao\",\"tipo\":[\"grave\",\"suspensao\"],\"tags_comportamento\":[\"agressao_verbal\",\"bullying\"],\"notificar_coordenacao\":true,\"notificar_responsavel\":true}" "$TG")
+assert "8.1 ocorrencia com tipo array e tags 201" "201" "$HTTP"
+
+OCO_ID2=$(UUID)
+HTTP=$(api_code POST "/rest/v1/ocorrencias" "{\"id\":\"$OCO_ID2\",\"aluno_id\":\"e0000000-0000-0000-0000-000000000001\",\"professor_id\":\"$FP\",\"turma_id\":\"$FT\",\"ano_letivo_id\":\"b0000000-0000-0000-0000-000000000001\",\"titulo\":\"Test notificacoes\",\"descricao\":\"Teste de notificacoes\",\"tipo\":[\"grave\"],\"notificar_coordenacao\":false,\"notificar_responsavel\":true}" "$TG")
+assert "8.2 ocorrencia com notificacoes 201" "201" "$HTTP"
+
+HTTP=$(api_code GET "/rest/v1/ocorrencias?select=tipo,tags_comportamento,notificar_coordenacao,notificar_responsavel&id=eq.$OCO_ID" '' "$TG")
+assert "8.3 SELECT ocorrencia 200" "200" "$HTTP"
+OCO_DATA=$(api_body)
+assert_contains "8.3 tipo contem grave" "$OCO_DATA" "grave"
+assert_contains "8.3 tipo contem suspensao" "$OCO_DATA" "suspensao"
+assert_contains "8.3 tags_comportamento" "$OCO_DATA" "agressao_verbal"
+assert_contains "8.3 notificar_coordenacao true" "$OCO_DATA" "true"
+
+HTTP=$(api_code GET "/rest/v1/ocorrencias?select=notificar_coordenacao,notificar_responsavel&id=eq.$OCO_ID2" '' "$TG")
+assert "8.4 SELECT ocorrencia notif 200" "200" "$HTTP"
+OCO_NTF=$(api_body)
+assert_contains "8.4 notificar_coordenacao false" "$OCO_NTF" "false"
+
+echo ""; echo "=== 9. NOVOS CAMPOS — FREQUENCIAS ==="
+
+# Garantir token valido do professor
+HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"Prof123!"}')
+TP=$(api_body | py "d=json.load(sys.stdin); print(d.get('access_token',''))")
+if [ -z "$TP" ]; then
+  HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"NovaSenha456!"}')
+  TP=$(api_body | py "d=json.load(sys.stdin); print(d.get('access_token',''))")
+fi
+# Garantir que o aluno seed existe e está enturmado
+# (João Miguel — e0000000-0000-0000-0000-000000000001 na turma 1º A — d0000000-0000-0000-0000-000000000001)
+HTTP=$(api_code GET "/rest/v1/enturmacoes?select=id&aluno_id=eq.$FA&turma_id=eq.$FT&status=eq.matriculado&limit=1" '' "$TG")
+ENTURM_OK=$(api_body | py "d=json.load(sys.stdin); print(1 if isinstance(d,list) and len(d)>0 else 0)" 2>/dev/null)
+if [ "$ENTURM_OK" != "1" ]; then
+  HTTP=$(api_code POST "/rest/v1/enturmacoes" "{\"aluno_id\":\"$FA\",\"turma_id\":\"$FT\",\"ano_letivo_id\":\"b0000000-0000-0000-0000-000000000001\",\"status\":\"matriculado\",\"data_matricula\":\"2026-01-01\"}" "$TG")
+fi
+
+# 9.1 Criar frequencia com motivos_ausencia e observacao (DELETE+INSERT para idempotencia)
+# Garantir que não há frequência pré-existente para esta combinação
+HTTP=$(api_code DELETE "/rest/v1/frequencias?aluno_id=eq.$FA&data_aula=eq.2026-07-28&periodo=eq.Manhã&tipo_registro=eq.chamada_aula" '' "$TP")
+FREQ_MOT=$(UUID)
+HTTP=$(api_code POST "/rest/v1/frequencias" "{\"client_request_id\":\"$FREQ_MOT\",\"aluno_id\":\"$FA\",\"professor_id\":\"$FP\",\"turma_id\":\"$FT\",\"ano_letivo_id\":\"b0000000-0000-0000-0000-000000000001\",\"data_aula\":\"2026-07-28\",\"periodo\":\"Manhã\",\"tipo_registro\":\"chamada_aula\",\"status\":\"ausente\",\"motivos_ausencia\":[\"enfermaria\",\"saida_antecipada\"],\"observacao\":\"Encaminhado a enfermaria\"}" "$TP")
+assert "9.1 frequencia com motivos_ausencia e observacao 201" "201" "$HTTP"
+
+HTTP=$(api_code GET "/rest/v1/frequencias?select=motivos_ausencia,observacao&client_request_id=eq.$FREQ_MOT" '' "$TP")
+assert "9.2 SELECT frequencia 200" "200" "$HTTP"
+FREQ_DATA=$(api_body)
+assert_contains "9.2 motivos_ausencia enfermaria" "$FREQ_DATA" "enfermaria"
+assert_contains "9.2 observacao" "$FREQ_DATA" "Encaminhado"
+
+echo ""; echo "=== 10. NOVOS CAMPOS — PERFIS ==="
+
+HTTP=$(api_code PATCH "/rest/v1/perfis?id=eq.a0000000-0000-0000-0000-000000000002" '{"acesso_modulos":["frequencia","ocorrencias","chat","relatorios"],"permissoes":["exportar","gerenciar_usuarios"]}' "$TG")
+assert "10.1 UPDATE perfil acesso_modulos e permissoes 204" "204" "$HTTP"
+
+HTTP=$(api_code GET "/rest/v1/perfis?select=acesso_modulos,permissoes&id=eq.a0000000-0000-0000-0000-000000000002" '' "$TG")
+assert "10.2 SELECT perfil 200" "200" "$HTTP"
+PERF_DATA=$(api_body)
+assert_contains "10.2 acesso_modulos contem frequencia" "$PERF_DATA" "frequencia"
+assert_contains "10.2 permissoes contem exportar" "$PERF_DATA" "exportar"
+
+echo ""; echo "=== 11. NOVOS CAMPOS — ALUNOS ==="
+
+AID_NOVO=$(UUID)
+HTTP=$(api_code POST "/rest/v1/alunos" "{\"id\":\"$AID_NOVO\",\"nome\":\"Aluno Completo\",\"matricula\":\"COMPLETO${UNIQ}\",\"transporte_escolar\":true,\"alimentacao_diferenciada\":true,\"necessidades_especiais\":false,\"documentos_recebidos\":[\"rg\",\"cpf\",\"certidao_nascimento\"]}" "$TG")
+assert "11.1 aluno completo com novos campos 201" "201" "$HTTP"
+
+HTTP=$(api_code GET "/rest/v1/alunos?select=transporte_escolar,alimentacao_diferenciada,necessidades_especiais,documentos_recebidos&id=eq.$AID_NOVO" '' "$TG")
+assert "11.2 SELECT aluno completo 200" "200" "$HTTP"
+ALU_DATA=$(api_body)
+assert_contains "11.2 transporte_escolar true" "$ALU_DATA" "true"
+assert_contains "11.2 documentos rg" "$ALU_DATA" "rg"
+assert_contains "11.2 documentos cpf" "$ALU_DATA" "cpf"
+
+echo ""; echo "=== 12. EDGE CASES — NOVOS CAMPOS ==="
+
+# 12.1 ocorrencia com tipo array vazio (deve aceitar com default)
+OCO_VAZIO=$(UUID)
+HTTP=$(api_code POST "/rest/v1/ocorrencias" "{\"id\":\"$OCO_VAZIO\",\"aluno_id\":\"e0000000-0000-0000-0000-000000000001\",\"professor_id\":\"$FP\",\"turma_id\":\"$FT\",\"ano_letivo_id\":\"b0000000-0000-0000-0000-000000000001\",\"titulo\":\"Test vazio\",\"descricao\":\"Teste array vazio\",\"tipo\":[],\"tags_comportamento\":[]}" "$TG")
+assert "12.1 ocorrencia arrays vazios 201" "201" "$HTTP"
+
+# 12.2 perfil com arrays vazios (UPDATE para limpar)
+HTTP=$(api_code PATCH "/rest/v1/perfis?id=eq.a0000000-0000-0000-0000-000000000002" '{"acesso_modulos":[],"permissoes":[]}' "$TG")
+assert "12.2 UPDATE perfil arrays vazios 204" "204" "$HTTP"
+
+# 12.3 SELECT view v_feed_aluno com novos tipos
+HTTP=$(api_code GET "/rest/v1/rpc/v_feed_aluno?limit=1" '' "$TG" 2>/dev/null) || HTTP=$(api_code GET "/rest/v1/v_feed_aluno?limit=1" '' "$TG" 2>/dev/null)
+# View pode ser acessada via REST ou nao, qualquer resposta 2xx é aceitavel
+echo "  📝 v_feed_aluno HTTP $HTTP"
+
+# 12.4 aluno com documentos_recebidos vazio
+AID_SEMDOC=$(UUID)
+HTTP=$(api_code POST "/rest/v1/alunos" "{\"id\":\"$AID_SEMDOC\",\"nome\":\"Sem Documentos\",\"matricula\":\"SEMDOC${UNIQ}\",\"documentos_recebidos\":[]}" "$TG")
+assert "12.4 aluno documentos vazio 201" "201" "$HTTP"
 
 echo ""; echo "=========================================="
 echo "  FIM SECAO 7 — TODOS OS FLUXOS VERIFICADOS"

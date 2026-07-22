@@ -346,7 +346,7 @@ insert into public.ocorrencias (aluno_id, professor_id, turma_id, ano_letivo_id,
     'b0000000-0000-0000-0000-000000000001',
     'Uso de celular durante prova',
     'Aluno foi flagrado utilizando o celular durante a avaliação bimestral de Português. O aparelho foi recolhido e entregue à coordenação.',
-    'grave',
+    '{grave}',
     'em_andamento',
     '2026-03-10 09:30:00-03'
   ),
@@ -357,7 +357,7 @@ insert into public.ocorrencias (aluno_id, professor_id, turma_id, ano_letivo_id,
     'b0000000-0000-0000-0000-000000000001',
     'Ameaça a colega de turma',
     'Aluna fez ameaças verbais a um colega durante o intervalo. Testemunhas relataram o ocorrido à coordenação. Exige reunião com responsável.',
-    'suspensao',
+    '{suspensao}',
     'aberta',
     '2026-03-18 15:00:00-03'
   );

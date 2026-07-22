@@ -2,10 +2,30 @@ import { test, expect, type Page } from '@playwright/test';
 import { spawn } from 'child_process';
 
 const URL_SUPABASE = process.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321';
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz';
 
 let funcoesProcess: ReturnType<typeof spawn> | null = null;
 
+async function restaurarSenha(uid: string, senha: string) {
+  try {
+    await fetch(`${URL_SUPABASE}/auth/v1/admin/users/${uid}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SERVICE_KEY,
+        Authorization: `Bearer ${SERVICE_KEY}`,
+      },
+      body: JSON.stringify({ password: senha, email_confirm: true }),
+    });
+  } catch { /* ignorar */ }
+}
+
 test.beforeAll(async () => {
+  // Restaurar senhas dos seed users (podem ter sido alteradas por testes anteriores)
+  await restaurarSenha('a0000000-0000-0000-0000-000000000002', 'Prof123!');
+  await restaurarSenha('a0000000-0000-0000-0000-000000000003', 'Prof123!');
+  await restaurarSenha('a0000000-0000-0000-0000-000000000005', 'Resp123!');
+
   try {
     const res = await fetch(`${URL_SUPABASE}/functions/v1/solicitar-codigo`, {
       method: 'POST',
