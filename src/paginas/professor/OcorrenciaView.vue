@@ -73,12 +73,11 @@ async function confirmar() {
     mensagemErro.value = 'Descreva a ocorrência com pelo menos 10 caracteres.';
     return;
   }
-  const tipoSelecionado = tipos.value.includes('suspensao') ? 'suspensao' : 'grave';
   const ok = await registrarOcorrenciaGrave(
     alunoId.value,
     usuario.value.id,
     descricao.value.trim(),
-    tipoSelecionado,
+    tipos.value,
     exigePresenca.value,
     tags.value,
     notificarCoordenacao.value,

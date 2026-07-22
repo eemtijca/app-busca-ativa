@@ -167,7 +167,7 @@ export interface OcorrenciaGrave {
   alunoMatricula: string;
   turma: string | null;
   descricao: string;
-  tipo: 'grave' | 'suspensao';
+  tipo: string[];
   data: string;
   professorNome?: string;
   anexoUrl?: string | null;

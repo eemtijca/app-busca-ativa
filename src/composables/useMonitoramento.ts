@@ -275,7 +275,7 @@ export function useMonitoramento() {
     alunoId: string,
     professorId: string,
     descricao: string,
-    tipo: 'grave' | 'suspensao' = 'grave',
+    tipos: string[] = ['grave'],
     exigePresencaResponsavel = false,
     tags?: string[],
     notificarCoordenacao = true,
@@ -299,7 +299,7 @@ export function useMonitoramento() {
         ano_letivo_id: enturmacao.ano_letivo_id,
         titulo: descricao.slice(0, 100),
         descricao,
-        tipo,
+        tipo: tipos,
         exige_presenca_responsavel: exigePresencaResponsavel,
         tags_comportamento: tags ?? [],
         notificar_coordenacao: notificarCoordenacao,
@@ -720,9 +720,9 @@ export function useMonitoramento() {
           const { data: dataFormatada } = formatarDataHorario(oc.created_at);
           alertas.push({
             id: `oc-${oc.id}`,
-            tipo: oc.tipo === 'suspensao' ? 'suspensao' : 'comunicado',
+            tipo: oc.tipo.includes('suspensao') ? 'suspensao' : 'comunicado',
             titulo:
-              oc.tipo === 'suspensao'
+              oc.tipo.includes('suspensao')
                 ? `Suspensão — ${filho.nome}`
                 : `Ocorrência grave — ${filho.nome}`,
             descricao: oc.descricao,

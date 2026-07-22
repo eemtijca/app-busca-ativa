@@ -228,7 +228,7 @@ export interface Ocorrencia {
   ano_letivo_id: string;
   titulo: string;
   descricao: string;
-  tipo: TipoOcorrencia;
+  tipo: string[];
   status: StatusOcorrencia;
   exige_presenca_responsavel: boolean;
   tags_comportamento: string[];

@@ -11,11 +11,11 @@ const emit = defineEmits<{
   'registrar-suspensao': [ocorrenciaId: string];
 }>();
 
-const classeTipo: Record<OcorrenciaGrave['tipo'], string> = {
+const classeTipo: Record<string, string> = {
   grave: 'text-bg-danger',
   suspensao: 'text-bg-dark',
 };
-const rotuloTipo: Record<OcorrenciaGrave['tipo'], string> = {
+const rotuloTipo: Record<string, string> = {
   grave: 'Ocorrência grave',
   suspensao: 'Suspensão',
 };
@@ -31,7 +31,12 @@ const rotuloTipo: Record<OcorrenciaGrave['tipo'], string> = {
     >
       <div class="d-flex w-100 justify-content-between gap-2 flex-wrap mb-2">
         <div class="d-flex align-items-center gap-2 flex-wrap">
-          <span class="badge" :class="classeTipo[oc.tipo]">{{ rotuloTipo[oc.tipo] }}</span>
+          <span
+            v-for="t in oc.tipo"
+            :key="t"
+            class="badge"
+            :class="classeTipo[t] || 'text-bg-secondary'"
+          >{{ rotuloTipo[t] || t }}</span>
           <strong class="me-2">{{ oc.alunoNome }}</strong>
           <small class="text-body-secondary">
             <span v-if="oc.turma">{{ oc.turma }} · </span>Matrícula {{ oc.alunoMatricula }}
@@ -67,7 +72,7 @@ const rotuloTipo: Record<OcorrenciaGrave['tipo'], string> = {
         </button>
 
         <button
-          v-if="oc.tipo === 'grave'"
+          v-if="oc.tipo.includes('grave')"
           type="button"
           class="btn btn-sm btn-outline-dark"
           @click="emit('registrar-suspensao', oc.id)"
