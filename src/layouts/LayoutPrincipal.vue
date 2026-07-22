@@ -41,6 +41,16 @@ onMounted(() => {
         },
         () => carregarContagemNotificacoes(),
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notificacoes',
+          filter: `destinatario_id=eq.${usuario.value.id}`,
+        },
+        () => carregarContagemNotificacoes(),
+      )
       .subscribe();
   }
 });

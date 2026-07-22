@@ -398,6 +398,7 @@ export interface CodigoRedefinicao {
   codigo: string;
   criado_por: string | null;
   usado_em: string | null;
+  revogado_em: string | null;
   expira_em: string;
   created_at: string;
   updated_at: string;

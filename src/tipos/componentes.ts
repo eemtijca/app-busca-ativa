@@ -298,6 +298,7 @@ export interface CodigoGerado {
   codigo: string;
   criado_por_nome: string | null;
   usado_em: string | null;
+  revogado_em: string | null;
   expira_em: string;
   criado_em: string;
   status: 'ativo' | 'usado' | 'expirado';

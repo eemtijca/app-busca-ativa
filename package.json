@@ -12,7 +12,14 @@
     "lint": "run-s lint:*",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
-    "format": "prettier --write --experimental-cli src/"
+    "format": "prettier --write --experimental-cli src/",
+    "test": "run-s test:typecheck test:lint test:build test:api",
+    "test:api": "bash scripts/test-api.sh",
+    "test:e2e": "npx playwright test",
+    "test:db": "bash scripts/test-db.sh",
+    "test:typecheck": "vue-tsc --build",
+    "test:lint": "run-s lint:*",
+    "test:build": "vite build"
   },
   "dependencies": {
     "@fontsource/geist-mono": "^5.2.8",

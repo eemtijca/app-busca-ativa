@@ -2,11 +2,13 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useGestaoUsuarios } from '@/composables/useGestaoUsuarios';
+import { useRealtimeRefresh } from '@/composables/useRealtimeRefresh';
 import { supabaseClient } from '@/servicos/supabase';
 import type { AlunoItem } from '@/tipos/componentes';
 
 const router = useRouter();
 const { buscarAlunos, carregando } = useGestaoUsuarios();
+const { ultimaAtualizacao, estaAtualizando, statusConexao, aoConectar, atualizar: refresh } = useRealtimeRefresh();
 
 const alunos = ref<AlunoItem[]>([]);
 const busca = ref('');
@@ -38,14 +40,22 @@ const statusBadge = (status: string) => {
   return map[status] ?? 'secondary';
 };
 
-onMounted(async () => {
+async function carregarAlunos() {
   alunos.value = await buscarAlunos();
+}
+
+async function atualizarManual() {
+  await refresh(carregarAlunos);
+}
+
+onMounted(async () => {
+  await carregarAlunos();
   canalAlunos = supabaseClient
     .channel('alunos-gestao')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'alunos' }, () =>
       buscarAlunos().then((r) => (alunos.value = r)),
     )
-    .subscribe();
+    .subscribe(aoConectar(carregarAlunos));
 });
 
 onUnmounted(() => {
@@ -69,10 +79,39 @@ onUnmounted(() => {
         <i class="bi bi-book text-primary me-2" aria-hidden="true"></i>
         Alunos
       </h1>
-      <router-link to="/gestao/alunos/novo" class="btn btn-sm btn-primary">
-        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
-        Novo aluno
-      </router-link>
+      <div class="d-flex align-items-center gap-2">
+        <router-link to="/gestao/alunos/novo" class="btn btn-sm btn-primary">
+          <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+          Novo aluno
+        </router-link>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          :disabled="estaAtualizando"
+          @click="atualizarManual"
+          title="Recarregar dados"
+        >
+          <span
+            v-if="estaAtualizando"
+            class="spinner-border spinner-border-sm me-1"
+            role="status"
+            aria-hidden="true"
+          ></span>
+          <i v-else class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>
+          Atualizar
+        </button>
+        <span
+          class="rounded-circle d-inline-block"
+          :class="statusConexao === 'conectado' ? 'bg-success' : 'bg-danger'"
+          style="width: 8px; height: 8px"
+          :title="statusConexao === 'conectado' ? 'Conectado' : 'Desconectado'"
+        ></span>
+      </div>
+    </div>
+
+    <div v-if="ultimaAtualizacao" class="small text-body-tertiary mb-2 text-end">
+      <i class="bi bi-clock me-1" aria-hidden="true"></i>
+      Última atualização: {{ ultimaAtualizacao.toLocaleTimeString('pt-BR') }}
     </div>
 
     <div class="d-flex flex-wrap gap-2 mb-3">

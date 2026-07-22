@@ -166,6 +166,47 @@ assert "redefinir-senha fraca 400" "400" "$HTTP"
 HTTP=$(edge_code "criar-usuario" '{"nome":"Fail","email":"f@f.com","papel":"professor"}' "$TP")
 assert "criar-usuario como professor 403" "403" "$HTTP"
 
+echo ""; echo "=== 2.7-2.14 EDGE FUNCTIONS — CODIGOS ==="
+
+# 2.7 criar-usuario retorna codigo
+HTTP=$(edge_code "criar-usuario" "{\"nome\":\"Codigo Test\",\"email\":\"codigo$$@escola.edu.br\",\"papel\":\"responsavel\"}" "$TG")
+assert "criar-usuario novo 200" "200" "$HTTP"
+NOVO_CODIGO=$(api_body | py "d=json.load(sys.stdin); print(d.get('codigo',''))")
+assert "criar-usuario retorna codigo" 1 "$( [ -n "$NOVO_CODIGO" ] && echo 1 || echo 0 )"
+assert "criar-usuario codigo 6 digitos" 6 "$(echo -n "$NOVO_CODIGO" | wc -c)"
+NOVO_ID_CODE=$(api_body | py "d=json.load(sys.stdin); print(d.get('id',''))")
+SENHA_TEMP_CODE=$(api_body | py "d=json.load(sys.stdin); print(d.get('senha_temporaria',''))")
+
+# 2.8 login com o novo usuario criado (que tem código)
+sleep 1
+HTTP=$(api_code POST "/auth/v1/token?grant_type=password" "{\"email\":\"codigo$$@escola.edu.br\",\"password\":\"$SENHA_TEMP_CODE\"}")
+assert "novo usuario com codigo login 200" "200" "$HTTP"
+
+# 2.9 redefinir-senha-codigo — código invalido
+HTTP=$(edge_code "redefinir-senha-codigo" '{"email":"prof1@escola.edu.br","codigo":"000000","novaSenha":"NovaSenha456!"}')
+assert "redefinir codigo invalido 400" "400" "$HTTP"
+
+# 2.10 redefinir-senha-codigo — email mismatch
+HTTP=$(edge_code "redefinir-senha-codigo" "{\"email\":\"outro@email.com\",\"codigo\":\"$NOVO_CODIGO\",\"novaSenha\":\"NovaSenha456!\"}")
+assert "redefinir email mismatch 400" "400" "$HTTP"
+
+# 2.11 redefinir-senha-codigo — codigo expirado (manual)
+npx supabase db query "UPDATE codigos_redefinicao SET expira_em = now() - interval '1 minute' WHERE id = (SELECT id FROM codigos_redefinicao WHERE email='codigo$$@escola.edu.br' ORDER BY created_at DESC LIMIT 1);" 2>&1 | tail -1
+HTTP=$(edge_code "redefinir-senha-codigo" "{\"email\":\"codigo$$@escola.edu.br\",\"codigo\":\"$NOVO_CODIGO\",\"novaSenha\":\"NovaSenha456!\"}")
+assert "redefinir codigo expirado 400" "400" "$HTTP"
+
+# 2.12 redefinir-senha-codigo — sem campos
+HTTP=$(edge_code "redefinir-senha-codigo" '{}')
+assert "redefinir vazio 400" "400" "$HTTP"
+
+# 2.13 redefinir-senha-codigo — email vazio
+HTTP=$(edge_code "redefinir-senha-codigo" '{"email":"","codigo":"123456","novaSenha":"NovaSenha123!"}')
+assert "redefinir email vazio 400" "400" "$HTTP"
+
+# 2.14 redefinir-senha-codigo — senha fraca
+HTTP=$(edge_code "redefinir-senha-codigo" '{"email":"prof1@escola.edu.br","codigo":"123456","novaSenha":"abc"}')
+assert "redefinir senha fraca 400" "400" "$HTTP"
+
 echo ""; echo "=== 3. RPC ==="
 
 HTTP=$(api_code POST "/rest/v1/rpc/fn_gerar_codigo_redefinicao" '{"p_perfil_id":"a0000000-0000-0000-0000-000000000002"}' "$TG")
@@ -175,6 +216,79 @@ assert "codigo 6 digitos" 6 "$(echo -n "$CODIGO" | wc -c)"
 
 HTTP=$(api_code POST "/rest/v1/rpc/fn_gerar_codigo_redefinicao" '{"p_perfil_id":"00000000-0000-0000-0000-000000000000"}' "$TG")
 assert "gerar codigo perfil invalido 400" "400" "$HTTP"
+
+# Re-obter token do professor (pode ter expirado por mudanca de senha em execucoes anteriores)
+HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"Prof123!"}')
+TP=$(api_body | py "d=json.load(sys.stdin); print(d.get('access_token',''))")
+# Se TP estiver vazio, tenta senha alterada pelo teste anterior
+if [ -z "$TP" ]; then
+  HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"NovaSenha456!"}')
+  TP=$(api_body | py "d=json.load(sys.stdin); print(d.get('access_token',''))")
+fi
+
+echo ""; echo "=== 3.3-3.12 RPC — CODIGOS ==="
+
+# 3.3 Dedup: gerar codigo 2x para mesmo perfil retorna o mesmo
+HTTP=$(api_code POST "/rest/v1/rpc/fn_gerar_codigo_redefinicao" '{"p_perfil_id":"a0000000-0000-0000-0000-000000000002"}' "$TG")
+assert "gerar codigo dedup 1 200" "200" "$HTTP"
+CODIGO_A=$(api_body | tr -d '"')
+assert "codigo_a 6 digitos" 6 "$(echo -n "$CODIGO_A" | wc -c)"
+
+sleep 1
+HTTP=$(api_code POST "/rest/v1/rpc/fn_gerar_codigo_redefinicao" '{"p_perfil_id":"a0000000-0000-0000-0000-000000000002"}' "$TG")
+CODIGO_B=$(api_body | tr -d '"')
+assert "gerar codigo dedup 2 200" "200" "$HTTP"
+assert "dedup mesmo codigo" "$CODIGO_A" "$CODIGO_B"
+
+# 3.4 Gerar codigo para perfil pendente
+# prof3 (000004) foi setado como 'pendente' no caso extremo (linha 276)
+HTTP=$(api_code POST "/rest/v1/rpc/fn_gerar_codigo_redefinicao" '{"p_perfil_id":"a0000000-0000-0000-0000-000000000004"}' "$TG")
+assert "gerar codigo pendente 200" "200" "$HTTP"
+CODIGO_PENDENTE=$(api_body | tr -d '"')
+assert "codigo pendente 6 digitos" 6 "$(echo -n "$CODIGO_PENDENTE" | wc -c)"
+
+# 3.5 Gerar codigo para perfil inexistente
+HTTP=$(api_code POST "/rest/v1/rpc/fn_gerar_codigo_redefinicao" '{"p_perfil_id":"00000000-0000-0000-0000-000000000001"}' "$TG")
+assert "gerar codigo uuid inexistente 400" "400" "$HTTP"
+
+# 3.6 Revogar codigo ativo (usando REST API para obter o id)
+sleep 1
+HTTP=$(api_code POST "/rest/v1/rpc/fn_gerar_codigo_redefinicao" '{"p_perfil_id":"a0000000-0000-0000-0000-000000000002"}' "$TG")
+CODIGO_REV=$(api_body | tr -d '"')
+HTTP=$(api_code GET "/rest/v1/codigos_redefinicao?select=id&codigo=eq.$CODIGO_REV&order=created_at.desc&limit=1" '' "$TG")
+assert "buscar id do codigo 200" "200" "$HTTP"
+REV_ID=$(api_body | py "d=json.load(sys.stdin); print(d[0]['id'] if d else '')" 2>/dev/null)
+assert "codigo id encontrado" 1 "$( [ -n "$REV_ID" ] && echo 1 || echo 0 )"
+HTTP=$(api_code POST "/rest/v1/rpc/fn_revogar_codigo" "{\"p_codigo_id\":\"$REV_ID\"}" "$TG")
+assert "revogar codigo ativo 204" "204" "$HTTP"
+
+# 3.7 Verificar revogado_em foi preenchido (via REST API)
+HTTP=$(api_code GET "/rest/v1/codigos_redefinicao?select=id,revogado_em&id=eq.$REV_ID" '' "$TG")
+REV_CHECK=$(api_body | py "d=json.load(sys.stdin); print(d[0].get('revogado_em') is not None if d else False)" 2>/dev/null)
+assert "revogado_em preenchido" "True" "$REV_CHECK"
+
+# 3.8 Revogar codigo ja usado (rejeitado — usar REST API para obter id)
+HTTP=$(api_code GET "/rest/v1/codigos_redefinicao?select=id&not.is.usado_em&limit=1" '' "$TG")
+USADO_ID=$(api_body | py "d=json.load(sys.stdin); print(d[0]['id'] if d else '')" 2>/dev/null)
+HTTP=$(api_code POST "/rest/v1/rpc/fn_revogar_codigo" "{\"p_codigo_id\":\"$USADO_ID\"}" "$TG")
+assert "revogar codigo usado 400" "400" "$HTTP"
+
+# 3.9 Revogar codigo como professor (rejeitado)
+HTTP=$(api_code POST "/rest/v1/rpc/fn_revogar_codigo" "{\"p_codigo_id\":\"$REV_ID\"}" "$TP")
+assert "revogar como professor 400" "400" "$HTTP"
+
+# 3.10 Após revogar, codigo nao pode ser usado
+HTTP=$(edge_code "redefinir-senha-codigo" "{\"email\":\"prof1@escola.edu.br\",\"codigo\":\"$CODIGO_REV\",\"novaSenha\":\"NovaSenha456!\"}")
+assert "usar codigo revogado 400" "400" "$HTTP"
+
+# 3.11 Gerar codigo perfil inativo rejeitado — expirar codigos ativos existentes primeiro
+npx supabase db query "UPDATE codigos_redefinicao SET expira_em = now() WHERE perfil_id='a0000000-0000-0000-0000-000000000004' AND expira_em > now() AND usado_em IS NULL;" 2>&1 | tail -1
+npx supabase db query "UPDATE perfis SET status='inativo' WHERE id='a0000000-0000-0000-0000-000000000004';" 2>&1 | tail -1
+HTTP=$(api_code POST "/rest/v1/rpc/fn_gerar_codigo_redefinicao" '{"p_perfil_id":"a0000000-0000-0000-0000-000000000004"}' "$TG")
+assert "gerar codigo inativo 400" "400" "$HTTP"
+
+# 3.12 Restaurar status do prof3
+npx supabase db query "UPDATE perfis SET status='pendente' WHERE id='a0000000-0000-0000-0000-000000000004';" 2>&1 | tail -1
 
 echo ""; echo "=== 4. CRUD ==="
 
@@ -369,6 +483,111 @@ HTTP=$(api_code DELETE "/rest/v1/frequencias?aluno_id=eq.$FA&data_aula=eq.2026-0
 assert "DELETE antes de reinserir 204" "204" "$HTTP"
 HTTP=$(api_code POST "/rest/v1/frequencias" "{\"aluno_id\":\"$FA\",\"professor_id\":\"$FP\",\"turma_id\":\"$FT\",\"ano_letivo_id\":\"b0000000-0000-0000-0000-000000000001\",\"data_aula\":\"2026-07-26\",\"periodo\":\"7o Horario\",\"tipo_registro\":\"chamada_aula\",\"status\":\"ausente\"}" "$TP")
 assert "reinserir ausencia 201" "201" "$HTTP"
+
+echo ""; echo "=== 7. CICLO DE VIDA COMPLETO DOS CODIGOS ==="
+
+EMAIL_VIDA="vida$$@escola.edu.br"
+
+# 7.1 Criar usuario via edge function → obter id e codigo
+HTTP=$(edge_code "criar-usuario" "{\"nome\":\"Vida Test\",\"email\":\"$EMAIL_VIDA\",\"papel\":\"professor\"}" "$TG")
+assert "7.1 criar usuario 200" "200" "$HTTP"
+VIDA_ID=$(api_body | py "d=json.load(sys.stdin); print(d.get('id',''))")
+VIDA_CODIGO=$(api_body | py "d=json.load(sys.stdin); print(d.get('codigo',''))")
+assert "7.1 id retornado" 1 "$( [ -n "$VIDA_ID" ] && echo 1 || echo 0 )"
+assert "7.1 codigo retornado" 1 "$( [ -n "$VIDA_CODIGO" ] && echo 1 || echo 0 )"
+assert "7.1 codigo 6 digitos" 6 "$(echo -n "$VIDA_CODIGO" | wc -c)"
+sleep 1
+
+# 7.2 Verificar que perfil existe e esta funcional
+sleep 1
+HTTP=$(api_code GET "/rest/v1/perfis?select=id,status&id=eq.${VIDA_ID}" '' "$TG")
+assert "7.2 buscar perfil 200" "200" "$HTTP"
+VIDA_STATUS=$(api_body | py "d=json.load(sys.stdin); print(d[0]['status'] if d else '')" 2>/dev/null)
+assert "7.2 perfil existe" 1 "$( [ -n "$VIDA_STATUS" ] && echo 1 || echo 0 )"
+
+# 7.3 Dedup: gerar segundo codigo retorna o mesmo
+HTTP=$(api_code POST "/rest/v1/rpc/fn_gerar_codigo_redefinicao" "{\"p_perfil_id\":\"$VIDA_ID\"}" "$TG")
+assert "7.3 gerar codigo dedup 200" "200" "$HTTP"
+VIDA_CODIGO_2=$(api_body | tr -d '"')
+assert "7.3 dedup mesmo codigo" "$VIDA_CODIGO" "$VIDA_CODIGO_2"
+
+# 7.4 Usar codigo valido → redefinir senha
+sleep 1
+HTTP=$(edge_code "redefinir-senha-codigo" "{\"email\":\"$EMAIL_VIDA\",\"codigo\":\"$VIDA_CODIGO\",\"novaSenha\":\"Vida123!@#\"}")
+assert "7.4 usar codigo valido 200" "200" "$HTTP"
+
+# 7.5 Perfil foi ativado (pendente → ativo)
+HTTP=$(api_code GET "/rest/v1/perfis?select=id,status&id=eq.$VIDA_ID" '' "$TG")
+assert "7.5 buscar perfil 200" "200" "$HTTP"
+VIDA_STATUS2=$(api_body | py "d=json.load(sys.stdin); print(d[0]['status'] if d else '')" 2>/dev/null)
+assert "7.5 perfil ativado apos uso" "ativo" "$VIDA_STATUS2"
+
+# 7.6 Reusar codigo rejeitado
+HTTP=$(edge_code "redefinir-senha-codigo" "{\"email\":\"$EMAIL_VIDA\",\"codigo\":\"$VIDA_CODIGO\",\"novaSenha\":\"Vida456!@#\"}")
+assert "7.6 reusar codigo rejeitado 400" "400" "$HTTP"
+
+# 7.7 Login com nova senha
+sleep 1
+HTTP=$(api_code POST "/auth/v1/token?grant_type=password" "{\"email\":\"$EMAIL_VIDA\",\"password\":\"Vida123!@#\"}")
+assert "7.7 login nova senha 200" "200" "$HTTP"
+
+# 7.8 Gerar novo codigo (usuario agora ativo)
+HTTP=$(api_code POST "/rest/v1/rpc/fn_gerar_codigo_redefinicao" "{\"p_perfil_id\":\"$VIDA_ID\"}" "$TG")
+assert "7.8 gerar codigo ativo 200" "200" "$HTTP"
+VIDA_CODIGO_NOVO=$(api_body | tr -d '"')
+assert "7.8 codigo 6 digitos" 6 "$(echo -n "$VIDA_CODIGO_NOVO" | wc -c)"
+assert "7.8 codigo diferente do anterior" 1 "$( [ "$VIDA_CODIGO_NOVO" != "$VIDA_CODIGO" ] && echo 1 || echo 0 )"
+
+# 7.9 Obter id do codigo via REST API e revogar
+HTTP=$(api_code GET "/rest/v1/codigos_redefinicao?select=id&codigo=eq.$VIDA_CODIGO_NOVO&order=created_at.desc&limit=1" '' "$TG")
+assert "7.9 buscar codigo 200" "200" "$HTTP"
+VIDA_CODIGO_ID=$(api_body | py "d=json.load(sys.stdin); print(d[0]['id'] if d else '')" 2>/dev/null)
+assert "7.9 codigo id encontrado" 1 "$( [ -n "$VIDA_CODIGO_ID" ] && echo 1 || echo 0 )"
+HTTP=$(api_code POST "/rest/v1/rpc/fn_revogar_codigo" "{\"p_codigo_id\":\"$VIDA_CODIGO_ID\"}" "$TG")
+assert "7.9 revogar codigo 204" "204" "$HTTP"
+
+# 7.10 Verificar revogado_em foi preenchido (via REST API)
+HTTP=$(api_code GET "/rest/v1/codigos_redefinicao?select=id,revogado_em&id=eq.$VIDA_CODIGO_ID" '' "$TG")
+REVOGADO_CHECK=$(api_body | py "d=json.load(sys.stdin); print(d[0].get('revogado_em') is not None if d else False)" 2>/dev/null)
+assert "7.10 revogado_em preenchido" "True" "$REVOGADO_CHECK"
+
+# 7.11 Tentar usar codigo revogado
+HTTP=$(edge_code "redefinir-senha-codigo" "{\"email\":\"$EMAIL_VIDA\",\"codigo\":\"$VIDA_CODIGO_NOVO\",\"novaSenha\":\"Vida789!@#\"}")
+assert "7.11 usar codigo revogado 400" "400" "$HTTP"
+
+# 7.12 CRUD — gestao pode SELECT codigos com dados de auditoria (buscar especificamente o revogado)
+sleep 1
+HTTP=$(api_code GET "/rest/v1/codigos_redefinicao?select=id,revogado_em&id=eq.${VIDA_CODIGO_ID}" '' "$TG")
+assert "7.12 gestao SELECT codigos 200" "200" "$HTTP"
+TEM_REVOGADO=$(api_body | py "d=json.load(sys.stdin); print(d[0].get('revogado_em') is not None if d else False)" 2>/dev/null)
+assert "7.12 revogado_em visivel" "True" "$TEM_REVOGADO"
+
+# Refresh professor token for 7.13-7.15
+HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"Prof123!"}')
+TP=$(api_body | py "d=json.load(sys.stdin); print(d.get('access_token',''))")
+if [ -z "$TP" ]; then
+  HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"NovaSenha456!"}')
+  TP=$(api_body | py "d=json.load(sys.stdin); print(d.get('access_token',''))")
+fi
+
+# 7.13 RLS — professor nao pode ver codigos de outro email
+sleep 1
+HTTP=$(api_code GET "/rest/v1/codigos_redefinicao?select=id,email&email=eq.${EMAIL_VIDA}" '' "$TP")
+assert "7.13 professor SELECT codigos 200" "200" "$HTTP"
+QTD_PROF=$(api_body | py "d=json.load(sys.stdin); print(len(d) if isinstance(d,list) else 0)" 2>/dev/null)
+assert "7.13 professor nao ve codigos alheios" "0" "$QTD_PROF"
+
+# 7.14 RLS — professor nao pode revogar
+HTTP=$(api_code POST "/rest/v1/rpc/fn_revogar_codigo" "{\"p_codigo_id\":\"$VIDA_CODIGO_ID\"}" "$TP")
+assert "7.14 professor nao revoga 400" "400" "$HTTP"
+
+# 7.15 RLS — professor nao pode gerar codigo
+HTTP=$(api_code POST "/rest/v1/rpc/fn_gerar_codigo_redefinicao" "{\"p_perfil_id\":\"$VIDA_ID\"}" "$TP")
+assert "7.15 professor nao gera 400" "400" "$HTTP"
+
+echo ""; echo "=========================================="
+echo "  FIM SECAO 7 — TODOS OS FLUXOS VERIFICADOS"
+echo "=========================================="
 
 # Restore prof1 password (changed by redefinir-senha-codigo test)
 curl -s -X PUT "$SUPABASE_URL/auth/v1/admin/users/a0000000-0000-0000-0000-000000000002" \

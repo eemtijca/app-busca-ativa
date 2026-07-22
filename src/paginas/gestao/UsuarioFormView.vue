@@ -34,11 +34,29 @@ const vinculos = ref<(VinculoResponsavel & { aluno_nome?: string })[]>([]);
 const salvando = ref(false);
 const mensagemSucesso = ref<string | null>(null);
 const mensagemErro = ref<string | null>(null);
+const mensagemToast = ref<string | null>(null);
 const usuarioCriado = ref(false);
+const codigoCriado = ref<string | null>(null);
 
 function mostrarErro(msg: string) {
   mensagemErro.value = msg;
   setTimeout(() => (mensagemErro.value = null), 4000);
+}
+
+async function copiarCodigoCriado() {
+  if (!codigoCriado.value) return;
+  try {
+    await navigator.clipboard.writeText(codigoCriado.value);
+  } catch {
+    const el = document.createElement('textarea');
+    el.value = codigoCriado.value;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+  }
+  mensagemToast.value = 'Código copiado!';
+  setTimeout(() => (mensagemToast.value = null), 2000);
 }
 
 onMounted(async () => {
@@ -122,7 +140,7 @@ async function salvar() {
         mostrarErro(erro.value || 'Falha ao atualizar usuário.');
       }
     } else {
-      const id = await criarUsuario({
+      const { id, codigo } = await criarUsuario({
         nome: nome.value.trim(),
         email: email.value.trim(),
         papel: papel.value,
@@ -134,8 +152,14 @@ async function salvar() {
           await supabaseClient.from('perfis').update({ notificacoes_ativas: false }).eq('id', id);
         }
         usuarioCriado.value = true;
-        mensagemSucesso.value =
-          'Usuário criado com sucesso! A senha inicial deve ser redefinida via código.';
+        codigoCriado.value = codigo;
+        if (codigo) {
+          mensagemSucesso.value =
+            'Usuário criado com sucesso! Código gerado automaticamente.';
+        } else {
+          mensagemSucesso.value =
+            'Usuário criado com sucesso! A senha inicial deve ser redefinida via código.';
+        }
       } else {
         mostrarErro(erro.value || 'Falha ao criar usuário.');
       }
@@ -174,6 +198,17 @@ async function salvar() {
       {{ mensagemErro }}
     </div>
 
+    <div
+      v-if="mensagemToast"
+      class="position-fixed bottom-0 start-50 translate-middle-x mb-4"
+      style="z-index: 1060"
+    >
+      <div class="bg-dark text-white small px-3 py-2 rounded-pill shadow">
+        <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
+        {{ mensagemToast }}
+      </div>
+    </div>
+
     <div v-if="usuarioCriado" class="text-center py-4">
       <span
         class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle text-success mb-3"
@@ -181,15 +216,38 @@ async function salvar() {
       >
         <i class="bi bi-check-lg" aria-hidden="true"></i>
       </span>
-      <p class="mb-3">
-        Usuário criado com sucesso! A senha inicial deve ser redefinida via código.
-      </p>
-      <div class="d-flex gap-2 justify-content-center">
-        <router-link to="/gestao/codigos" class="btn btn-primary">
+      <p class="mb-3">{{ mensagemSucesso }}</p>
+
+      <template v-if="codigoCriado">
+        <p class="small text-body-secondary mb-2">
+          Compartilhe o código com {{ nome }} para redefinir a senha.
+        </p>
+        <code
+          class="d-inline-block fs-1 fw-bold font-monospace text-success bg-body-tertiary px-3 py-2 rounded user-select-all mb-3"
+          style="letter-spacing: 0.15em"
+        >
+          {{ codigoCriado }}
+        </code>
+        <div class="d-flex gap-2 justify-content-center mb-3">
+          <button type="button" class="btn btn-sm btn-outline-secondary" @click="copiarCodigoCriado">
+            <i class="bi bi-clipboard me-1" aria-hidden="true"></i>
+            Copiar
+          </button>
+        </div>
+      </template>
+      <template v-else>
+        <p class="small text-body-secondary mb-3">
+          Acesse a tela de códigos para gerar um código de acesso.
+        </p>
+        <router-link to="/gestao/codigos" class="btn btn-primary mb-3">
           <i class="bi bi-key me-1" aria-hidden="true"></i>
-          Gerar código de acesso
+          Ir para códigos
         </router-link>
+      </template>
+
+      <div>
         <router-link to="/gestao/usuarios" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
           Voltar para lista
         </router-link>
       </div>

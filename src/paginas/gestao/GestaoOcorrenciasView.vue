@@ -2,12 +2,14 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMonitoramento } from '@/composables/useMonitoramento';
+import { useRealtimeRefresh } from '@/composables/useRealtimeRefresh';
 import { supabaseClient } from '@/servicos/supabase';
 import ListaOcorrencias from '@/componentes/ListaOcorrencias.vue';
 import type { OcorrenciaGrave } from '@/tipos/componentes';
 
 const router = useRouter();
 const { buscarOcorrenciasGraves, alternarBloqueioRetorno } = useMonitoramento();
+const { ultimaAtualizacao, estaAtualizando, statusConexao, aoConectar, atualizar: refresh } = useRealtimeRefresh();
 
 let canalOcorrencias: ReturnType<typeof supabaseClient.channel>;
 
@@ -52,14 +54,22 @@ function registrarSuspensao() {
   mostrarSucesso('Encaminhado para formalização de suspensão.');
 }
 
-onMounted(async () => {
+async function carregarOcorrencias() {
   ocorrencias.value = await buscarOcorrenciasGraves();
+}
+
+async function atualizarManual() {
+  await refresh(carregarOcorrencias);
+}
+
+onMounted(async () => {
+  await carregarOcorrencias();
   canalOcorrencias = supabaseClient
     .channel('ocorrencias-gestao')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'ocorrencias' }, () =>
       buscarOcorrenciasGraves().then((r) => (ocorrencias.value = r)),
     )
-    .subscribe();
+    .subscribe(aoConectar(carregarOcorrencias));
 });
 
 onUnmounted(() => {
@@ -83,7 +93,36 @@ onUnmounted(() => {
         <i class="bi bi-shield-exclamation text-danger me-2" aria-hidden="true"></i>
         Ocorrências graves e suspensões
       </h1>
-      <span class="badge text-bg-secondary">{{ ocorrencias.length }} registro(s)</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge text-bg-secondary">{{ ocorrencias.length }} registro(s)</span>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          :disabled="estaAtualizando"
+          @click="atualizarManual"
+          title="Recarregar dados"
+        >
+          <span
+            v-if="estaAtualizando"
+            class="spinner-border spinner-border-sm me-1"
+            role="status"
+            aria-hidden="true"
+          ></span>
+          <i v-else class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>
+          Atualizar
+        </button>
+        <span
+          class="rounded-circle d-inline-block"
+          :class="statusConexao === 'conectado' ? 'bg-success' : 'bg-danger'"
+          style="width: 8px; height: 8px"
+          :title="statusConexao === 'conectado' ? 'Conectado' : 'Desconectado'"
+        ></span>
+      </div>
+    </div>
+
+    <div v-if="ultimaAtualizacao" class="small text-body-tertiary mb-2 text-end">
+      <i class="bi bi-clock me-1" aria-hidden="true"></i>
+      Última atualização: {{ ultimaAtualizacao.toLocaleTimeString('pt-BR') }}
     </div>
 
     <div v-if="mensagemSucesso" class="alert alert-success py-2 small mb-3" role="status">

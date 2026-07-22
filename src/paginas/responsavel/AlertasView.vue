@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
 import { useMonitoramento } from '@/composables/useMonitoramento';
+import { useRealtimeRefresh } from '@/composables/useRealtimeRefresh';
 import { supabaseClient } from '@/servicos/supabase';
 import CartaoAlertaResponsavel from '@/componentes/CartaoAlertaResponsavel.vue';
 import type { AlertaResponsavel } from '@/tipos/componentes';
@@ -10,6 +11,7 @@ import type { AlertaResponsavel } from '@/tipos/componentes';
 const router = useRouter();
 const { usuario } = useAutenticacao();
 const { buscarAlertasResponsavel } = useMonitoramento();
+const { ultimaAtualizacao, estaAtualizando, statusConexao, aoConectar, atualizar: refresh } = useRealtimeRefresh();
 
 let canalAlertas: ReturnType<typeof supabaseClient.channel>;
 
@@ -19,17 +21,25 @@ function abrirJustificativa() {
   router.push('/responsavel/justificativa');
 }
 
-onMounted(async () => {
+async function carregarAlertas() {
   if (usuario.value) {
     alertas.value = await buscarAlertasResponsavel(usuario.value.id);
   }
+}
+
+async function atualizarManual() {
+  await refresh(carregarAlertas);
+}
+
+onMounted(async () => {
+  await carregarAlertas();
   canalAlertas = supabaseClient
     .channel('alertas-responsavel')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'frequencias' }, () => {
       if (usuario.value)
         buscarAlertasResponsavel(usuario.value.id).then((r) => (alertas.value = r));
     })
-    .subscribe();
+    .subscribe(aoConectar(carregarAlertas));
 });
 
 onUnmounted(() => {
@@ -44,10 +54,41 @@ onUnmounted(() => {
       Voltar
     </button>
 
-    <h1 class="h5 fw-bold mb-3">
-      <i class="bi bi-bell text-danger me-2" aria-hidden="true"></i>
-      Alertas de ausência
-    </h1>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+      <h1 class="h5 fw-bold mb-0">
+        <i class="bi bi-bell text-danger me-2" aria-hidden="true"></i>
+        Alertas de ausência
+      </h1>
+      <div class="d-flex align-items-center gap-2">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          :disabled="estaAtualizando"
+          @click="atualizarManual"
+          title="Recarregar dados"
+        >
+          <span
+            v-if="estaAtualizando"
+            class="spinner-border spinner-border-sm me-1"
+            role="status"
+            aria-hidden="true"
+          ></span>
+          <i v-else class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>
+          Atualizar
+        </button>
+        <span
+          class="rounded-circle d-inline-block"
+          :class="statusConexao === 'conectado' ? 'bg-success' : 'bg-danger'"
+          style="width: 8px; height: 8px"
+          :title="statusConexao === 'conectado' ? 'Conectado' : 'Desconectado'"
+        ></span>
+      </div>
+    </div>
+
+    <div v-if="ultimaAtualizacao" class="small text-body-tertiary mb-2 text-end">
+      <i class="bi bi-clock me-1" aria-hidden="true"></i>
+      Última atualização: {{ ultimaAtualizacao.toLocaleTimeString('pt-BR') }}
+    </div>
 
     <div v-if="!alertas.length" class="text-center py-5 text-body-secondary">
       <span

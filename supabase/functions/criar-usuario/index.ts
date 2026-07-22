@@ -88,8 +88,24 @@ serve(async (req: Request) => {
       })
       .eq('id', userId)
 
+    let codigo: string | null = null
+    try {
+      const { data: codigoData } = await supabaseAdmin.rpc('fn_gerar_codigo_redefinicao', {
+        p_perfil_id: userId,
+        p_criado_por: user.id,
+      })
+      codigo = codigoData as string | null
+    } catch (e) {
+      console.error('[criar-usuario] Erro ao gerar codigo automatico:', e)
+    }
+
     return new Response(
-      JSON.stringify({ id: userId, email, senha_temporaria: senhaTemporaria }),
+      JSON.stringify({
+        id: userId,
+        email,
+        codigo,
+        senha_temporaria: senhaTemporaria,
+      }),
       { status: 200, headers: { 'Content-Type': 'application/json' } },
     )
   } catch (error) {

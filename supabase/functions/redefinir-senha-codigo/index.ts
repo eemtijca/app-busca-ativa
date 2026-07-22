@@ -70,6 +70,12 @@ serve(async (req: Request) => {
       .update({ usado_em: new Date().toISOString() })
       .eq('id', codigoData.id)
 
+    await supabaseAdmin
+      .from('perfis')
+      .update({ status: 'ativo' })
+      .eq('id', codigoData.perfil_id)
+      .eq('status', 'pendente')
+
     return new Response(
       JSON.stringify({ success: true }),
       { status: 200, headers: { 'Content-Type': 'application/json' } },

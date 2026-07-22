@@ -2,11 +2,13 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useGestaoUsuarios } from '@/composables/useGestaoUsuarios';
+import { useRealtimeRefresh } from '@/composables/useRealtimeRefresh';
 import { supabaseClient } from '@/servicos/supabase';
 import type { UsuarioItem } from '@/tipos/componentes';
 
 const router = useRouter();
 const { buscarUsuarios, ativarUsuario, desativarUsuario, carregando } = useGestaoUsuarios();
+const { ultimaAtualizacao, estaAtualizando, statusConexao, aoConectar, atualizar: refresh } = useRealtimeRefresh();
 
 const usuarios = ref<UsuarioItem[]>([]);
 const busca = ref('');
@@ -91,14 +93,22 @@ async function toggleAtivacao(usuario: UsuarioItem) {
   }
 }
 
-onMounted(async () => {
+async function carregarUsuarios() {
   usuarios.value = await buscarUsuarios();
+}
+
+async function atualizarManual() {
+  await refresh(carregarUsuarios);
+}
+
+onMounted(async () => {
+  await carregarUsuarios();
   canalUsuarios = supabaseClient
     .channel('usuarios-gestao')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'perfis' }, () =>
       buscarUsuarios().then((r) => (usuarios.value = r)),
     )
-    .subscribe();
+    .subscribe(aoConectar(carregarUsuarios));
 });
 
 onUnmounted(() => {
@@ -122,10 +132,39 @@ onUnmounted(() => {
         <i class="bi bi-people text-primary me-2" aria-hidden="true"></i>
         Usuários
       </h1>
-      <router-link to="/gestao/usuarios/novo" class="btn btn-sm btn-primary">
-        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
-        Novo usuário
-      </router-link>
+      <div class="d-flex align-items-center gap-2">
+        <router-link to="/gestao/usuarios/novo" class="btn btn-sm btn-primary">
+          <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+          Novo usuário
+        </router-link>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          :disabled="estaAtualizando"
+          @click="atualizarManual"
+          title="Recarregar dados"
+        >
+          <span
+            v-if="estaAtualizando"
+            class="spinner-border spinner-border-sm me-1"
+            role="status"
+            aria-hidden="true"
+          ></span>
+          <i v-else class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>
+          Atualizar
+        </button>
+        <span
+          class="rounded-circle d-inline-block"
+          :class="statusConexao === 'conectado' ? 'bg-success' : 'bg-danger'"
+          style="width: 8px; height: 8px"
+          :title="statusConexao === 'conectado' ? 'Conectado' : 'Desconectado'"
+        ></span>
+      </div>
+    </div>
+
+    <div v-if="ultimaAtualizacao" class="small text-body-tertiary mb-2 text-end">
+      <i class="bi bi-clock me-1" aria-hidden="true"></i>
+      Última atualização: {{ ultimaAtualizacao.toLocaleTimeString('pt-BR') }}
     </div>
 
     <div v-if="mensagemSucesso" class="alert alert-success py-2 small mb-3" role="status">

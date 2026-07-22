@@ -68,7 +68,9 @@ export function useGestaoUsuarios() {
     }
   }
 
-  async function criarUsuario(dados: DadosCriacaoUsuario): Promise<string | null> {
+  async function criarUsuario(
+    dados: DadosCriacaoUsuario,
+  ): Promise<{ id: string | null; codigo: string | null }> {
     carregando.value = true;
     erro.value = null;
     try {
@@ -100,12 +102,12 @@ export function useGestaoUsuarios() {
       if (!response.ok) {
         throw new Error(resultado.error ?? 'Erro ao criar usuario.');
       }
-      return resultado.id as string;
+      return { id: resultado.id as string, codigo: (resultado.codigo as string) ?? null };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error('[useGestaoUsuarios] Erro ao criar usuario:', msg);
       erro.value = msg;
-      return null;
+      return { id: null, codigo: null };
     } finally {
       carregando.value = false;
     }
@@ -248,13 +250,13 @@ export function useGestaoUsuarios() {
         if (perfisExistentes) {
           responsavelId = (perfisExistentes as unknown as Perfil).id;
         } else if (dados.responsavel_nome) {
-          const id = await criarUsuario({
+          const { id: idCriado } = await criarUsuario({
             nome: dados.responsavel_nome,
             email: dados.responsavel_email,
             papel: 'responsavel',
             telefone: dados.responsavel_telefone,
           });
-          if (id) responsavelId = id;
+          if (idCriado) responsavelId = idCriado;
         }
 
         if (responsavelId) {
@@ -311,41 +313,6 @@ export function useGestaoUsuarios() {
   // CODIGOS DE REDEFINICAO
   // ==========================================================================
 
-  async function buscarSolicitacoesPendentes(): Promise<SolicitacaoCodigo[]> {
-    carregando.value = true;
-    erro.value = null;
-    try {
-      const { data, error: err } = await supabaseClient
-        .from('codigos_redefinicao')
-        .select('*, perfis!codigos_redefinicao_perfil_id_fkey!inner(nome, papel)')
-        .order('created_at', { ascending: false });
-
-      if (err) throw err;
-
-      const codigos = (data ?? []) as unknown as (CodigoRedefinicao & {
-        perfis: { nome: string; papel: string };
-      })[];
-
-      const pendentes = codigos.filter((c) => !c.usado_em && new Date(c.expira_em) > new Date());
-
-      return pendentes.map((c) => ({
-        id: c.id,
-        email: c.email,
-        perfil_id: c.perfil_id,
-        nome: c.perfis.nome,
-        papel: c.perfis.papel as 'professor' | 'gestao' | 'responsavel',
-        criado_em: c.created_at,
-      }));
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.error('[useGestaoUsuarios] Erro ao buscar solicitacoes:', msg);
-      erro.value = 'Nao foi possivel carregar as solicitacoes.';
-      return [];
-    } finally {
-      carregando.value = false;
-    }
-  }
-
   async function buscarNotificacoesCodigos(): Promise<SolicitacaoCodigo[]> {
     carregando.value = true;
     erro.value = null;
@@ -365,6 +332,22 @@ export function useGestaoUsuarios() {
         created_at: string;
       }>;
 
+      const perfilIds = notificacoes
+        .map((n) => n.metadados?.perfil_id)
+        .filter((id): id is string => !!id);
+
+      const perfisMap = new Map<string, { nome: string; papel: string }>();
+      if (perfilIds.length > 0) {
+        const { data: perfis } = await supabaseClient
+          .from('perfis')
+          .select('id, nome, papel')
+          .in('id', perfilIds);
+        for (const p of perfis ?? []) {
+          const perfil = p as unknown as Perfil;
+          perfisMap.set(perfil.id, { nome: perfil.nome, papel: perfil.papel });
+        }
+      }
+
       const resultados: SolicitacaoCodigo[] = [];
 
       for (const n of notificacoes) {
@@ -372,18 +355,13 @@ export function useGestaoUsuarios() {
         const perfilId = n.metadados?.perfil_id;
 
         if (email && perfilId) {
-          const { data: perfil } = await supabaseClient
-            .from('perfis')
-            .select('nome, papel')
-            .eq('id', perfilId)
-            .single();
-
+          const perfil = perfisMap.get(perfilId);
           resultados.push({
             id: n.id,
             email,
             perfil_id: perfilId,
-            nome: (perfil as unknown as Perfil)?.nome ?? 'Desconhecido',
-            papel: (perfil as unknown as Perfil)?.papel ?? 'responsavel',
+            nome: perfil?.nome ?? 'Desconhecido',
+            papel: (perfil?.papel as SolicitacaoCodigo['papel']) ?? 'responsavel',
             criado_em: n.created_at,
           });
         }
@@ -426,8 +404,7 @@ export function useGestaoUsuarios() {
       const { data, error: err } = await supabaseClient
         .from('codigos_redefinicao')
         .select('*, perfis!codigos_redefinicao_perfil_id_fkey!inner(nome)')
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false });
 
       if (err) throw err;
 
@@ -453,7 +430,7 @@ export function useGestaoUsuarios() {
         const expira = new Date(c.expira_em);
         let status: 'ativo' | 'usado' | 'expirado';
         if (c.usado_em) status = 'usado';
-        else if (expira < agora) status = 'expirado';
+        else if (c.revogado_em || expira < agora) status = 'expirado';
         else status = 'ativo';
 
         return {
@@ -463,6 +440,7 @@ export function useGestaoUsuarios() {
           codigo: c.codigo,
           criado_por_nome: c.criado_por ? (criadorMap.get(c.criado_por) ?? null) : null,
           usado_em: c.usado_em,
+          revogado_em: c.revogado_em,
           expira_em: c.expira_em,
           criado_em: c.created_at,
           status,
@@ -534,7 +512,6 @@ export function useGestaoUsuarios() {
     buscarAlunos,
     criarAluno,
     atualizarAluno,
-    buscarSolicitacoesPendentes,
     buscarNotificacoesCodigos,
     gerarCodigoRedefinicao,
     buscarCodigosGerados,

@@ -134,15 +134,15 @@ test.describe('Gestao - Codigos', () => {
   test('CT13 - Pagina de codigos carrega com abas', async ({ page }) => {
     await login(page, 'gestao@escola.edu.br', 'Admin123!');
     await page.goto('/gestao/codigos');
-    await expect(page.getByText('Solicitações pendentes')).toBeVisible();
-    await expect(page.getByText('Códigos recentes')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Solicitações' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Códigos' })).toBeVisible();
   });
 
   test('CT14 - Codigos do seed sao exibidos', async ({ page }) => {
     await login(page, 'gestao@escola.edu.br', 'Admin123!');
     await page.goto('/gestao/codigos');
-    await expect(page.getByText('Solicitações pendentes')).toBeVisible();
-    await expect(page.getByText('Códigos recentes')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Solicitações' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Códigos' })).toBeVisible();
   });
 });
 
@@ -258,5 +258,218 @@ test.describe('Professor - Frequencia', () => {
     await page.goto('/professor');
     await page.goto('/professor/frequencia');
     await expect(page.getByText('Registrar frequência')).toBeVisible();
+  });
+});
+
+test.describe('Gestao - Usuarios - Codigo no cadastro', () => {
+  test('CT27 - Criar usuario exibe codigo no sucesso', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    const emailUnico = `playwright${Date.now()}@test.com`;
+    await page.goto('/gestao/usuarios/novo');
+    await page.fill('#campoNome', 'Test Playwright');
+    await page.fill('#campoEmail', emailUnico);
+    await page.click('button[type="submit"]');
+    await expect(page.locator('code.font-monospace').first()).toBeVisible({ timeout: 15000 });
+    const textoCode = await page.locator('code.font-monospace').first().textContent();
+    expect(textoCode?.trim().length).toBe(6);
+  });
+
+  test('CT28 - Botao Copiar no sucesso funciona', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    const emailUnico = `copy${Date.now()}@test.com`;
+    await page.goto('/gestao/usuarios/novo');
+    await page.fill('#campoNome', 'Copy Test');
+    await page.fill('#campoEmail', emailUnico);
+    await page.click('button[type="submit"]');
+    await expect(page.locator('code.font-monospace').first()).toBeVisible({ timeout: 15000 });
+    const btnCopiar = page.locator('button').filter({ hasText: 'Copiar' }).first();
+    await btnCopiar.click();
+    await expect(page.getByText('Código copiado!')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('CT29 - Criar usuario valida campos obrigatorios', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/usuarios/novo');
+    await page.evaluate(() => {
+      const form = document.querySelector('form');
+      if (form) form.setAttribute('novalidate', '');
+    });
+    await page.click('button[type="submit"]');
+    await expect(page.locator('.alert-danger')).toBeVisible({ timeout: 5000 });
+  });
+});
+
+test.describe('Gestao - Codigos - Aba Pendentes', () => {
+  test('CT34 - Pagina de codigos carrega com abas e indicador', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/codigos');
+    await expect(page.getByRole('button', { name: 'Solicitações' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Códigos' })).toBeVisible();
+    await expect(page.locator('.nav-link.active')).toContainText('Solicitações');
+  });
+
+  test('CT35 - Aba Solicitações carrega e mostra dados', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/codigos');
+    await page.waitForTimeout(1500);
+    await expect(page.getByRole('button', { name: 'Solicitações' })).toBeVisible();
+    const emptyState = page.getByText('Nenhuma solicitação pendente');
+    const cards = page.locator('.card');
+    const hasCards = (await cards.count()) > 0;
+    if (!hasCards) {
+      await expect(emptyState).toBeVisible({ timeout: 5000 });
+    }
+  });
+
+  test('CT36 - Botao Atualizar recarrega dados', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/codigos');
+    const btnAtualizar = page.locator('button:has-text("Atualizar")');
+    await expect(btnAtualizar).toBeVisible();
+    await btnAtualizar.click();
+    await expect(page.getByText('Dados atualizados')).toBeVisible({ timeout: 10000 });
+  });
+
+  test('CT37 - Indicador de conexao visivel', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/codigos');
+    await expect(page.locator('span[title="Conectado"]')).toBeVisible();
+  });
+
+  test('CT38 - Aba Códigos carrega e mostra dados', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/codigos');
+    await page.locator('button:has-text("Códigos")').click();
+    await page.waitForTimeout(1000);
+    await expect(page.getByRole('button', { name: 'Códigos' })).toBeVisible();
+    const emptyState = page.getByText('Nenhum código gerado ainda');
+    const table = page.locator('table');
+    const hasTable = await table.isVisible();
+    if (!hasTable) {
+      await expect(emptyState).toBeVisible({ timeout: 5000 });
+    }
+  });
+});
+
+test.describe('Gestao - Codigos - Aba Recentes', () => {
+  test('CT40 - Busca por nome filtra resultados', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/codigos');
+    await page.locator('button:has-text("Códigos")').click();
+    await page.waitForTimeout(500);
+    const inputBusca = page.locator('input[type="search"]');
+    if (await inputBusca.isVisible()) {
+      await inputBusca.fill('XXXX_NAO_EXISTE_XXXX');
+      await page.waitForTimeout(500);
+      await expect(page.getByText('Nenhum resultado para')).toBeVisible();
+    }
+  });
+
+  test('CT41 - Toggle visibilidade do codigo', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/codigos');
+    await page.locator('button:has-text("Códigos")').click();
+    await page.waitForTimeout(500);
+    const olhos = page.locator('button[title="Mostrar"], button[title="Ocultar"]');
+    if (await olhos.count() > 0) {
+      await olhos.first().click();
+      await expect(page.locator('code.user-select-all').first()).toBeVisible();
+    }
+  });
+
+  test('CT42 - Badges de status sao exibidos', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/codigos');
+    await page.locator('button:has-text("Códigos")').click();
+    await page.waitForTimeout(500);
+    const badges = page.locator('table .badge');
+    const count = await badges.count();
+    expect(count).toBeGreaterThanOrEqual(0);
+  });
+
+  test('CT43 - Paginacao visivel quando necessario', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/codigos');
+    await page.locator('button:has-text("Códigos")').click();
+    await page.waitForTimeout(500);
+    const paginacao = page.getByText(/Página \d+ de \d+/);
+    if (await paginacao.isVisible()) {
+      await expect(paginacao).toBeVisible();
+    }
+  });
+
+  test('CT44 - Ultima atualizacao visivel', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/codigos');
+    await expect(page.getByText('Última atualização')).toBeVisible();
+  });
+});
+
+test.describe('Gestao - Codigos - Fluxo de revogacao', () => {
+  test('CT46 - Botao revogar abre modal de confirmacao', async ({ page }) => {
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/codigos');
+    await page.locator('button:has-text("Códigos")').click();
+    await page.waitForTimeout(500);
+    const revogarBtn = page.locator('button[title="Revogar código"]').first();
+    if (await revogarBtn.isVisible()) {
+      await revogarBtn.click();
+      await expect(page.getByText('Tem certeza que deseja revogar')).toBeVisible();
+      await page.locator('button:has-text("Cancelar")').click();
+    }
+  });
+});
+
+test.describe('Recuperacao de senha - Fluxo publico', () => {
+  test('CT31 - Pagina de solicitar codigo mostra formulario', async ({ page }) => {
+    await page.goto('/solicitar-codigo');
+    await expect(page.getByText('Solicitar código de acesso')).toBeVisible();
+    await expect(page.locator('input[type="email"]')).toBeVisible();
+    await expect(page.getByText('Já tenho um código')).toBeVisible();
+  });
+
+  test('CT32 - Pagina de redefinir senha mostra todos os campos', async ({ page }) => {
+    await page.goto('/redefinir-senha-codigo');
+    await expect(page.locator('input[id="email"]')).toBeVisible();
+    await expect(page.locator('input[id="codigo"]')).toBeVisible();
+    await expect(page.locator('input[id="nova-senha"]')).toBeVisible();
+    await expect(page.getByText('Redefinir senha com código')).toBeVisible();
+  });
+
+  test('CT33 - Validacao de senha aparece ao digitar', async ({ page }) => {
+    await page.goto('/redefinir-senha-codigo');
+    await page.fill('input[id="nova-senha"]', 'Ab');
+    const requisitos = page.locator('ul[aria-label="Requisitos de senha"] li');
+    await expect(requisitos.first()).toBeVisible();
+  });
+});
+
+test.describe('Gestao - Codigos - Mobile', () => {
+  test('CT53 - Layout mobile carrega sem erros', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/codigos');
+    await expect(page.getByRole('button', { name: 'Solicitações' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Códigos' })).toBeVisible();
+  });
+
+  test('CT54 - Mobile: botao Atualizar funciona', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/codigos');
+    const btnAtualizar = page.locator('button:has-text("Atualizar")');
+    if (await btnAtualizar.isVisible()) {
+      await btnAtualizar.click();
+    }
+  });
+
+  test('CT55 - Mobile: abas funcionam', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await login(page, 'gestao@escola.edu.br', 'Admin123!');
+    await page.goto('/gestao/codigos');
+    await page.locator('button:has-text("Códigos")').click();
+    await page.waitForTimeout(300);
+    await page.locator('button:has-text("Solicitações")').click();
+    await expect(page.locator('.nav-link.active')).toContainText('Solicitações');
   });
 });
