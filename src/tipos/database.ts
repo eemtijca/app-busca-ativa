@@ -95,6 +95,8 @@ export interface Perfil {
   telefone: string | null;
   cargo: string | null;
   notificacoes_ativas: boolean;
+  acesso_modulos: string[];
+  permissoes: string[];
   status: StatusPerfil;
   ultimo_acesso_em: string | null;
   created_at: string;
@@ -122,6 +124,10 @@ export interface Aluno {
   observacoes: string | null;
   data_nascimento: string | null;
   data_matricula: string | null;
+  transporte_escolar: boolean;
+  alimentacao_diferenciada: boolean;
+  necessidades_especiais: boolean;
+  documentos_recebidos: string[];
   created_at: string;
   updated_at: string;
 }
@@ -187,6 +193,7 @@ export interface Frequencia {
   periodo: string;
   status: StatusFrequencia;
   observacao: string | null;
+  motivos_ausencia: string[];
   client_request_id: string | null;
   deleted_at: string | null;
   created_at: string;
@@ -221,9 +228,12 @@ export interface Ocorrencia {
   ano_letivo_id: string;
   titulo: string;
   descricao: string;
-  tipo: TipoOcorrencia;
+  tipo: string[];
   status: StatusOcorrencia;
   exige_presenca_responsavel: boolean;
+  tags_comportamento: string[];
+  notificar_coordenacao: boolean;
+  notificar_responsavel: boolean;
   presenca_responsavel_confirmada: boolean;
   data_confirmacao_presenca: string | null;
   data_ocorrencia: string;

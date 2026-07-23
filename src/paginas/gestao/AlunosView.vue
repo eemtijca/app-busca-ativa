@@ -212,6 +212,8 @@ onUnmounted(() => {
               <th scope="col">Nome</th>
               <th scope="col">Matrícula</th>
               <th scope="col">Turma</th>
+              <th scope="col">Indicadores</th>
+              <th scope="col">Documentos</th>
               <th scope="col">Status</th>
               <th scope="col" class="text-end">Ações</th>
             </tr>
@@ -221,6 +223,38 @@ onUnmounted(() => {
               <td class="fw-medium">{{ aluno.nome }}</td>
               <td class="text-body-secondary">{{ aluno.matricula }}</td>
               <td>{{ aluno.turma ?? '—' }}</td>
+              <td>
+                <div class="d-flex gap-1 flex-wrap">
+                  <i
+                    v-if="aluno.transporte_escolar"
+                    class="bi bi-bus-front text-success"
+                    title="Transporte escolar"
+                    aria-hidden="true"
+                  ></i>
+                  <i
+                    v-if="aluno.alimentacao_diferenciada"
+                    class="bi bi-cup-hot text-info"
+                    title="Alimentação diferenciada"
+                    aria-hidden="true"
+                  ></i>
+                  <i
+                    v-if="aluno.necessidades_especiais"
+                    class="bi bi-universal-access text-primary"
+                    title="Necessidades especiais"
+                    aria-hidden="true"
+                  ></i>
+                </div>
+              </td>
+              <td>
+                <span
+                  v-if="aluno.documentos_recebidos.length"
+                  class="badge text-bg-light border small"
+                  :title="'Documentos: ' + aluno.documentos_recebidos.join(', ')"
+                >
+                  {{ aluno.documentos_recebidos.length }}
+                </span>
+                <span v-else class="text-body-tertiary small">—</span>
+              </td>
               <td>
                 <span class="badge" :class="'text-bg-' + statusBadge(aluno.status)">
                   {{ aluno.status }}

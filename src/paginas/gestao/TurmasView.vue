@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { onMounted, ref, watch } from 'vue';
+import { useRouter, onBeforeRouteLeave } from 'vue-router';
 import { supabaseClient } from '@/servicos/supabase';
+import CampoFormulario from '@/componentes/CampoFormulario.vue';
 import type { Turma, SerieTurma, LetraTurma } from '@/tipos/database';
 
 const router = useRouter();
@@ -19,6 +20,19 @@ const formSerie = ref<SerieTurma>('1º');
 const formLetra = ref<LetraTurma>('A');
 const formCapacidade = ref<number | null>(null);
 const formAtivo = ref(true);
+const formDirty = ref(false);
+
+onBeforeRouteLeave((_to, _from, next) => {
+  if (formDirty.value && modalAberto.value && !carregando.value) {
+    const confirmar = window.confirm('Há alterações não salvas. Deseja realmente sair?');
+    if (!confirmar) return next(false);
+  }
+  next();
+});
+
+watch([formSerie, formLetra, formCapacidade, formAtivo], () => {
+  if (!formDirty.value && modalAberto.value) formDirty.value = true;
+});
 
 function mostrarSucesso(msg: string) {
   mensagemSucesso.value = msg;
@@ -35,6 +49,7 @@ function resetForm() {
   formLetra.value = 'A';
   formCapacidade.value = null;
   formAtivo.value = true;
+  formDirty.value = false;
   editandoId.value = null;
   modoEdicao.value = false;
 }
@@ -67,6 +82,7 @@ function abrirNovo() {
 }
 
 async function salvar() {
+  document.querySelector('.modal-body')?.scrollTo({ top: 0, behavior: 'smooth' });
   carregando.value = true;
   try {
     if (modoEdicao.value && editandoId.value) {
@@ -256,24 +272,21 @@ onMounted(carregarTurmas);
           </div>
           <form @submit.prevent="salvar">
             <div class="modal-body">
-              <div class="mb-3">
-                <label for="campoSerie" class="form-label small fw-medium">Série</label>
+              <CampoFormulario id="campoSerie" label="Série" :obrigatorio="true">
                 <select id="campoSerie" v-model="formSerie" class="form-select form-select-sm">
                   <option value="1º">1º</option>
                   <option value="2º">2º</option>
                   <option value="3º">3º</option>
                 </select>
-              </div>
-              <div class="mb-3">
-                <label for="campoLetra" class="form-label small fw-medium">Letra</label>
+              </CampoFormulario>
+              <CampoFormulario id="campoLetra" label="Letra" :obrigatorio="true">
                 <select id="campoLetra" v-model="formLetra" class="form-select form-select-sm">
                   <option value="A">A</option>
                   <option value="B">B</option>
                   <option value="C">C</option>
                 </select>
-              </div>
-              <div class="mb-3">
-                <label for="campoCapacidade" class="form-label small fw-medium">Capacidade</label>
+              </CampoFormulario>
+              <CampoFormulario id="campoCapacidade" label="Capacidade">
                 <input
                   id="campoCapacidade"
                   v-model.number="formCapacidade"
@@ -282,7 +295,7 @@ onMounted(carregarTurmas);
                   class="form-control form-control-sm"
                   autocomplete="off"
                 />
-              </div>
+              </CampoFormulario>
               <div class="mb-0">
                 <div class="form-check">
                   <input

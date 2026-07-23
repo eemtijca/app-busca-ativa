@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
 import { useMonitoramento } from '@/composables/useMonitoramento';
+import CampoFormulario from '@/componentes/CampoFormulario.vue';
+import GrupoCheckbox from '@/componentes/GrupoCheckbox.vue';
 import type { AlunoFrequencia } from '@/tipos/componentes';
 
 const router = useRouter();
@@ -11,29 +13,82 @@ const { buscarAlunosParaFrequencia, registrarAusenciaEmPeriodo, carregando } = u
 
 const alunos = ref<AlunoFrequencia[]>([]);
 const alunoId = ref('');
-const periodo = ref('1º Horário');
+const periodos = ref<string[]>([]);
 const justificativa = ref('');
+const mensagemSucesso = ref<string | null>(null);
 const mensagemErro = ref<string | null>(null);
 
-const periodosAula = ['1º Horário', '2º Horário', '3º Horário', '4º Horário', 'Manhã', 'Tarde'];
+const opcoesPeriodos = [
+  { valor: '1º Horário', rotulo: '1º Horário' },
+  { valor: '2º Horário', rotulo: '2º Horário' },
+  { valor: '3º Horário', rotulo: '3º Horário' },
+  { valor: '4º Horário', rotulo: '4º Horário' },
+  { valor: 'Manhã', rotulo: 'Manhã' },
+  { valor: 'Tarde', rotulo: 'Tarde' },
+];
+
+const opcoesMotivos = [
+  { valor: 'enfermaria', rotulo: 'Enfermaria', icone: 'heart-pulse' },
+  { valor: 'orientacao', rotulo: 'Orientação pedagógica', icone: 'people' },
+  { valor: 'saida_antecipada', rotulo: 'Saída antecipada', icone: 'door-open' },
+  { valor: 'conselho_tutelar', rotulo: 'Conselho tutelar', icone: 'shield-check' },
+  { valor: 'atendimento_psicologico', rotulo: 'Atendimento psicológico', icone: 'heart' },
+  { valor: 'atividade_externa', rotulo: 'Atividade externa', icone: 'briefcase' },
+];
+
+const motivos = ref<string[]>([]);
 const dataAula = ref(new Date().toISOString().slice(0, 10));
+
+const justificativaSugerida = computed(() => {
+  if (!motivos.value.length) return '';
+  const nomes = motivos.value.map((m) => opcoesMotivos.find((o) => o.valor === m)?.rotulo ?? m);
+  return `Aluno encaminhado para ${nomes.join(', ')}.`;
+});
+
+const contadorJustificativa = computed(() => justificativa.value.length);
+
+function aplicarMotivo() {
+  if (!justificativa.value || justificativa.value === justificativaSugerida.value) {
+    justificativa.value = justificativaSugerida.value;
+  }
+}
 
 async function confirmar() {
   if (!usuario.value || !alunoId.value) {
     mensagemErro.value = 'Selecione um aluno.';
     return;
   }
-  const ok = await registrarAusenciaEmPeriodo(
-    alunoId.value,
-    usuario.value.id,
-    dataAula.value,
-    periodo.value,
-  );
-  if (ok) {
-    router.back();
-  } else {
-    mensagemErro.value = 'Falha ao registrar. Tente novamente.';
+  if (!periodos.value.length) {
+    mensagemErro.value = 'Selecione pelo menos um período.';
+    return;
   }
+  for (const periodo of periodos.value) {
+    const ok = await registrarAusenciaEmPeriodo(
+      alunoId.value,
+      usuario.value.id,
+      dataAula.value,
+      periodo,
+      justificativa.value.trim() || undefined,
+      motivos.value.length ? motivos.value : undefined,
+    );
+    if (!ok) {
+      mensagemErro.value = `Falha ao registrar ausência no ${periodo}. Tente novamente.`;
+      return;
+    }
+  }
+  const total = periodos.value.length;
+  mensagemSucesso.value = `${total} ausência(s) registrada(s) com sucesso.`;
+  alunoId.value = '';
+  periodos.value = [];
+  motivos.value = [];
+  justificativa.value = '';
+  await nextTick();
+  requestAnimationFrame(() => {
+    document
+      .querySelector('.alert-success')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  setTimeout(() => (mensagemSucesso.value = null), 4000);
 }
 
 onMounted(async () => {
@@ -63,6 +118,10 @@ onMounted(async () => {
       Use quando o aluno esteve na escola mas se ausentou de um período específico.
     </p>
 
+    <div v-if="mensagemSucesso" class="alert alert-success py-2 small mb-3" role="status">
+      <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
+      {{ mensagemSucesso }}
+    </div>
     <div v-if="mensagemErro" class="alert alert-danger py-2 small mb-3" role="alert">
       <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
       {{ mensagemErro }}
@@ -70,35 +129,73 @@ onMounted(async () => {
 
     <div class="card border">
       <div class="card-body">
-        <div class="mb-3">
-          <label for="alunoSelect" class="form-label fw-medium small">Aluno</label>
+        <CampoFormulario id="dataAula" label="Data" :obrigatorio="true">
+          <input
+            id="dataAula"
+            v-model="dataAula"
+            type="date"
+            class="form-control form-control-sm"
+          />
+        </CampoFormulario>
+
+        <CampoFormulario id="alunoSelect" label="Aluno" :obrigatorio="true">
           <select id="alunoSelect" v-model="alunoId" class="form-select form-select-sm">
             <option value="" disabled>Selecione um aluno</option>
             <option v-for="a in alunos" :key="a.id" :value="a.id">
               {{ a.nome }} — {{ a.turma || 'Sem turma' }}
             </option>
           </select>
-        </div>
+        </CampoFormulario>
 
-        <div class="mb-3">
-          <label for="periodoSelect" class="form-label fw-medium small">Período da ausência</label>
-          <select id="periodoSelect" v-model="periodo" class="form-select form-select-sm">
-            <option v-for="p in periodosAula" :key="p" :value="p">{{ p }}</option>
-          </select>
-        </div>
+        <CampoFormulario
+          id="periodosAusencia"
+          label="Períodos de ausência"
+          :obrigatorio="true"
+          dica="Marque um ou mais períodos"
+        >
+          <GrupoCheckbox
+            nome="periodo"
+            :opcoes="opcoesPeriodos"
+            :modelo="periodos"
+            :colunas="3"
+            @update:modelo="periodos = $event"
+          />
+        </CampoFormulario>
 
-        <div class="mb-3">
-          <label for="justificativaText" class="form-label fw-medium small"
-            >Justificativa (opcional)</label
-          >
+        <CampoFormulario
+          id="motivosAusencia"
+          label="Motivo (preenchimento rápido)"
+          dica="Selecione para compor a justificativa automaticamente"
+        >
+          <GrupoCheckbox
+            nome="motivo"
+            :opcoes="opcoesMotivos"
+            :modelo="motivos"
+            :colunas="2"
+            @update:modelo="
+              (v) => {
+                motivos = v;
+                aplicarMotivo();
+              }
+            "
+          />
+        </CampoFormulario>
+
+        <CampoFormulario
+          id="justificativaText"
+          label="Justificativa (opcional)"
+          :maxlength="500"
+          :contador="contadorJustificativa"
+        >
           <textarea
             id="justificativaText"
             v-model="justificativa"
             class="form-control form-control-sm"
             rows="3"
             placeholder="Ex.: Encaminhado à enfermaria..."
+            maxlength="500"
           ></textarea>
-        </div>
+        </CampoFormulario>
 
         <div class="d-flex gap-2 justify-content-end">
           <button type="button" class="btn btn-sm btn-outline-secondary" @click="router.back()">
@@ -107,7 +204,7 @@ onMounted(async () => {
           <button
             type="button"
             class="btn btn-sm btn-success"
-            :disabled="carregando || !alunoId"
+            :disabled="carregando || !alunoId || !periodos.length"
             @click="confirmar"
           >
             <span
@@ -116,7 +213,7 @@ onMounted(async () => {
               role="status"
             ></span>
             <i v-else class="bi bi-save me-1" aria-hidden="true"></i>
-            Registrar
+            Registrar {{ periodos.length > 1 ? `${periodos.length} períodos` : '' }}
           </button>
         </div>
       </div>

@@ -1823,3 +1823,482 @@ revoke execute on function public.get_user_papel from anon;
 revoke execute on function public.is_professor_da_turma from anon;
 revoke execute on function public.is_responsavel_do_aluno from anon;
 revoke execute on function public.get_turma_do_aluno from anon;
+-- ============================================================================
+-- Migration: codigos_redefinicao
+-- Descricao: Tabela de codigos para redefinicao de senha, funcoes auxiliares
+--            e alteracao do enum tipo_notificacao.
+-- ============================================================================
+
+-- ============================================================================
+-- 1. ALTERAR ENUM
+-- ============================================================================
+alter type public.tipo_notificacao add value 'codigo_redefinicao';
+
+-- ============================================================================
+-- 2. TABELA CODIGOS_REDEFINICAO
+-- ============================================================================
+create table public.codigos_redefinicao (
+  id         uuid        primary key default gen_random_uuid(),
+  email      text        not null,
+  perfil_id  uuid        not null references public.perfis(id) on delete cascade,
+  codigo     text        not null,
+  criado_por uuid        references public.perfis(id) on delete set null,
+  usado_em   timestamptz,
+  expira_em  timestamptz not null default (now() + interval '1 hour'),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+comment on table public.codigos_redefinicao is
+  'Codigos de uso unico para redefinicao de senha via administracao. Expira em 1 hora.';
+
+create index idx_codigos_redefinicao_email on public.codigos_redefinicao(email);
+create index idx_codigos_redefinicao_email_codigo on public.codigos_redefinicao(email, codigo);
+
+-- ============================================================================
+-- 3. FUNCOES AUXILIARES
+-- ============================================================================
+
+create or replace function public.fn_gerar_codigo_redefinicao(
+  p_perfil_id uuid,
+  p_criado_por uuid default auth.uid()
+) returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_codigo text;
+  v_email  text;
+begin
+  if public.get_user_papel() != 'gestao' then
+    raise exception 'Apenas a gestao pode gerar codigos de redefinicao.';
+  end if;
+
+  select email into v_email
+  from public.perfis
+  where id = p_perfil_id and status = 'ativo';
+
+  if v_email is null then
+    raise exception 'Perfil nao encontrado ou inativo.';
+  end if;
+
+  v_codigo := lpad(floor(random() * 1000000)::text, 6, '0');
+
+  insert into public.codigos_redefinicao (email, perfil_id, codigo, criado_por)
+  values (v_email, p_perfil_id, v_codigo, p_criado_por);
+
+  return v_codigo;
+end;
+$$;
+
+comment on function public.fn_gerar_codigo_redefinicao is
+  'Gera um codigo de 6 digitos para redefinicao de senha. Apenas gestao.';
+
+create or replace function public.fn_solicitar_codigo_redefinicao(p_email text)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_perfil_id uuid;
+  v_papel     text;
+  v_nome      text;
+begin
+  select id, papel::text, nome into v_perfil_id, v_papel, v_nome
+  from public.perfis
+  where email = p_email and status = 'ativo';
+
+  if v_perfil_id is not null then
+    insert into public.notificacoes (destinatario_id, tipo, titulo, corpo, metadados)
+    select
+      p.id,
+      'codigo_redefinicao',
+      'Solicitacao de redefinicao de senha',
+      'O usuario ' || v_nome || ' (' || p_email || ', ' || v_papel || ') solicitou um codigo para redefinir a senha.',
+      jsonb_build_object('email', p_email, 'perfil_id', v_perfil_id)
+    from public.perfis p
+    where p.papel = 'gestao' and p.status = 'ativo';
+  end if;
+end;
+$$;
+
+comment on function public.fn_solicitar_codigo_redefinicao is
+  'Cria notificacoes para todos os usuarios de gestao quando alguem solicita redefinicao de senha.';
+
+-- ============================================================================
+-- 3B. FUNCAO CRIAR USUARIO
+-- ============================================================================
+
+create or replace function public.fn_criar_usuario(
+  p_nome      text,
+  p_email     text,
+  p_papel     text,
+  p_senha     text,
+  p_telefone  text default null,
+  p_cargo     text default null
+) returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid;
+begin
+  if public.get_user_papel() != 'gestao' then
+    raise exception 'Apenas gestao pode criar usuarios.';
+  end if;
+
+  v_user_id := gen_random_uuid();
+
+  insert into auth.users (id, email, encrypted_password, raw_user_meta_data, raw_app_meta_data, email_confirmed_at, confirmation_sent_at, confirmation_token, recovery_token, email_change_token_new, email_change, phone_change, email_change_token_current, reauthentication_token, is_sso_user, is_anonymous, created_at, updated_at)
+  values (
+    v_user_id,
+    p_email,
+    extensions.crypt(p_senha, extensions.gen_salt('bf', 10)),
+    jsonb_build_object('email_verified', true, 'nome', p_nome, 'papel', p_papel),
+    jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email')),
+    now(),
+    now(),
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    false,
+    false,
+    now(),
+    now()
+  );
+
+  update public.perfis
+  set telefone = p_telefone,
+      cargo = p_cargo,
+      status = 'pendente'
+  where id = v_user_id;
+
+  return v_user_id;
+end;
+$$;
+
+comment on function public.fn_criar_usuario is
+  'Cria usuario em auth.users com perfil pendente. Apenas gestao. O trigger fn_handle_new_user cria o perfil automaticamente.';
+
+-- ============================================================================
+-- 4. ROW LEVEL SECURITY
+-- ============================================================================
+
+alter table public.codigos_redefinicao enable row level security;
+
+create policy "Codigos: gestao tem acesso total"
+  on public.codigos_redefinicao for all
+  to authenticated
+  using (public.get_user_papel() = 'gestao')
+  with check (public.get_user_papel() = 'gestao');
+
+create policy "Codigos: usuario ve seus proprios registros"
+  on public.codigos_redefinicao for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.perfis
+      where id = auth.uid()
+        and email = codigos_redefinicao.email
+    )
+  );
+
+-- ============================================================================
+-- 5. TRIGGER UPDATED_AT
+-- ============================================================================
+create trigger trg_set_updated_at
+  before update on public.codigos_redefinicao
+  for each row
+  execute function public.fn_set_updated_at();
+
+-- ============================================================================
+-- 6. GRANTS — EXPOR TABELAS E FUNCOES VIA DATA API
+-- ============================================================================
+
+grant select, insert, update on public.codigos_redefinicao to authenticated, service_role;
+
+-- Permissao DELETE para frequencias (usada pelo fluxo de DELETE+INSERT)
+grant delete on public.frequencias to authenticated;
+
+-- Permissao UPDATE para notificacoes (marcar como lida)
+grant update on public.notificacoes to authenticated;
+
+-- Permissao INSERT para justificativas (gestao inserir manualmente)
+grant insert on public.justificativas_faltas to authenticated;
+
+grant execute on function public.fn_gerar_codigo_redefinicao to authenticated;
+grant execute on function public.fn_criar_usuario to authenticated;
+grant execute on function public.fn_solicitar_codigo_redefinicao to anon;
+
+-- ============================================================================
+-- 7. POLICIES ADICIONAIS
+-- ============================================================================
+
+create policy "Freq: professor deleta proprias"
+  on public.frequencias for delete
+  to authenticated
+  using (professor_id = auth.uid() and public.get_user_papel() = 'professor');
+
+create policy "Freq: gestao deleta"
+  on public.frequencias for delete
+  to authenticated
+  using (public.get_user_papel() = 'gestao');
+
+create policy "JustFaltas: gestao insere"
+  on public.justificativas_faltas for insert
+  to authenticated
+  with check (public.get_user_papel() = 'gestao');
+
+create policy "Notif: destinatario atualiza lida"
+  on public.notificacoes for update
+  to authenticated
+  using (destinatario_id = auth.uid())
+  with check (destinatario_id = auth.uid() and (lida = true or lida_em is not null));
+-- ============================================================================
+-- Migration: codigos_lifecycle
+-- Descricao: Aprimora o ciclo de vida dos codigos de redefinicao:
+--   1. Aceita perfil pendente na geracao
+--   2. Evita duplicacao de codigos ativos para o mesmo perfil
+--   3. Adiciona funcao de revogacao
+--   4. Adiciona coluna revogado_em para auditoria
+-- ============================================================================
+
+-- ============================================================================
+-- 1. COLUNA REVOGADO_EM
+-- ============================================================================
+alter table public.codigos_redefinicao
+  add column if not exists revogado_em timestamptz;
+
+comment on column public.codigos_redefinicao.revogado_em is
+  'Preenchido quando um admin revoga manualmente o codigo antes da expiracao natural.';
+
+-- ============================================================================
+-- 2. FUNCAO — GERAR CODIGO (REVISADA)
+-- ============================================================================
+-- Mudancas:
+--   - Aceita perfis com status 'ativo' ou 'pendente'
+--   - Retorna codigo ativo existente em vez de criar duplicata
+-- ============================================================================
+
+create or replace function public.fn_gerar_codigo_redefinicao(
+  p_perfil_id uuid,
+  p_criado_por uuid default auth.uid()
+) returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_codigo text;
+  v_email  text;
+  v_existente text;
+begin
+  if public.get_user_papel() != 'gestao' then
+    raise exception 'Apenas a gestao pode gerar codigos de redefinicao.';
+  end if;
+
+  -- Verifica se ja existe codigo ativo para este perfil
+  select codigo into v_existente
+  from public.codigos_redefinicao
+  where perfil_id = p_perfil_id
+    and usado_em is null
+    and expira_em > now()
+  order by created_at desc
+  limit 1;
+
+  if v_existente is not null then
+    return v_existente;
+  end if;
+
+  -- Busca email do perfil (aceita ativo ou pendente)
+  select email into v_email
+  from public.perfis
+  where id = p_perfil_id and status in ('ativo', 'pendente');
+
+  if v_email is null then
+    raise exception 'Perfil nao encontrado ou inativo.';
+  end if;
+
+  v_codigo := lpad(floor(random() * 1000000)::text, 6, '0');
+
+  insert into public.codigos_redefinicao (email, perfil_id, codigo, criado_por)
+  values (v_email, p_perfil_id, v_codigo, p_criado_por);
+
+  return v_codigo;
+end;
+$$;
+
+comment on function public.fn_gerar_codigo_redefinicao is
+  'Gera codigo de 6 digitos ou retorna codigo ativo existente. Aceita perfis ativo ou pendente. Apenas gestao.';
+
+-- ============================================================================
+-- 3. FUNCAO — REVOGAR CODIGO
+-- ============================================================================
+
+create or replace function public.fn_revogar_codigo(p_codigo_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if public.get_user_papel() != 'gestao' then
+    raise exception 'Apenas a gestao pode revogar codigos.';
+  end if;
+
+  update public.codigos_redefinicao
+  set expira_em = now(),
+      revogado_em = now()
+  where id = p_codigo_id
+    and usado_em is null
+    and expira_em > now();
+
+  if not found then
+    raise exception 'Codigo ja foi usado ou ja expirou.';
+  end if;
+end;
+$$;
+
+comment on function public.fn_revogar_codigo is
+  'Revogacao manual de codigo ativo. Define expira_em = now() e registra revogado_em. Lanca erro se ja usado ou expirado.';
+
+-- ============================================================================
+-- 4. GRANTS
+-- ============================================================================
+
+grant execute on function public.fn_gerar_codigo_redefinicao to authenticated;
+grant execute on function public.fn_revogar_codigo to authenticated;
+-- ============================================================================
+-- Migration: enable_realtime
+-- Descricao: Adiciona tabelas necessarias a publication supabase_realtime
+--            para que os eventos postgres_changes funcionem.
+-- ============================================================================
+
+alter publication supabase_realtime add table public.notificacoes;
+alter publication supabase_realtime add table public.codigos_redefinicao;
+alter publication supabase_realtime add table public.alunos;
+alter publication supabase_realtime add table public.perfis;
+alter publication supabase_realtime add table public.ocorrencias;
+alter publication supabase_realtime add table public.justificativas_faltas;
+alter publication supabase_realtime add table public.frequencias;
+-- ============================================================================
+-- Migration: Campos extras para formulários da gestão
+-- Adiciona colunas de módulos de acesso, permissões, documentos e
+-- indicadores nos perfis e alunos.
+-- ============================================================================
+
+-- -------- perfis --------
+alter table perfis
+  add column if not exists acesso_modulos text[] not null default '{}',
+  add column if not exists permissoes text[] not null default '{}';
+
+-- -------- alunos --------
+alter table alunos
+  add column if not exists transporte_escolar boolean not null default false,
+  add column if not exists alimentacao_diferenciada boolean not null default false,
+  add column if not exists necessidades_especiais boolean not null default false,
+  add column if not exists documentos_recebidos text[] not null default '{}';
+
+-- ============================================================================
+-- RLS: as novas colunas seguem as políticas já existentes nas tabelas
+-- (SELECT/UPDATE/INSERT já são controladas pelas policies de perfis e alunos)
+-- ============================================================================
+-- ============================================================================
+-- Migration: Persistir campos dos formulários do professor
+-- Adiciona colunas para tags, notificações e motivos que antes ficavam
+-- apenas na UI sem persistência no banco.
+-- ============================================================================
+
+-- -------- ocorrencias --------
+alter table ocorrencias
+  add column if not exists tags_comportamento text[] not null default '{}',
+  add column if not exists notificar_coordenacao boolean not null default true,
+  add column if not exists notificar_responsavel boolean not null default false;
+
+-- -------- frequencias --------
+-- observacao já existe; adicionar coluna para os motivos rápidos
+alter table frequencias
+  add column if not exists motivos_ausencia text[] not null default '{}';
+
+-- ============================================================================
+-- RLS: as novas colunas seguem as políticas já existentes nas tabelas
+-- ============================================================================
+-- ============================================================================
+-- Migration: Tipo de ocorrência como array (multisseleção)
+-- Altera tipo de enum único para text[], permitindo marcar
+-- "grave" e "suspensão" simultaneamente.
+-- ============================================================================
+
+-- a view v_feed_aluno depende da coluna tipo, precisa ser recriada
+drop view if exists public.v_feed_aluno;
+
+alter table ocorrencias
+  alter column tipo drop default,
+  alter column tipo type text[] using array[tipo::text];
+
+-- drop do enum já que não é mais usado
+drop type if exists public.tipo_ocorrencia;
+
+-- recria a view com o novo tipo
+create or replace view public.v_feed_aluno
+with (security_invoker = true)
+as
+select
+  f.aluno_id,
+  f.data_aula as data_evento,
+  f.created_at,
+  'frequencia' as tipo_evento,
+  jsonb_build_object(
+    'tipo_registro', f.tipo_registro,
+    'periodo', f.periodo,
+    'status', f.status,
+    'disciplina', d.nome,
+    'observacao', f.observacao
+  ) as detalhes
+from public.frequencias f
+left join public.disciplinas d on d.id = f.disciplina_id
+where f.deleted_at is null
+
+union all
+
+select
+  rc.aluno_id,
+  rc.data_hora::date,
+  rc.data_hora,
+  'comportamento',
+  jsonb_build_object(
+    'observacao', rc.observacao,
+    'tags', (
+      select jsonb_agg(jsonb_build_object('nome', tg.nome, 'categoria', tg.categoria))
+      from public.registro_comportamento_tags rct
+      join public.tags_comportamento tg on tg.id = rct.tag_id
+      where rct.registro_id = rc.id
+    )
+  )
+from public.registros_comportamento rc
+
+union all
+
+select
+  o.aluno_id,
+  o.data_ocorrencia::date,
+  o.data_ocorrencia,
+  'ocorrencia',
+  jsonb_build_object(
+    'titulo', o.titulo,
+    'tipo', o.tipo,
+    'status', o.status,
+    'exige_presenca', o.exige_presenca_responsavel
+  )
+from public.ocorrencias o
+
+order by data_evento desc, created_at desc;
+
+comment on view public.v_feed_aluno is 'RF22: Timeline unificada do aluno. Consolida frequências, comportamentos e ocorrências.';

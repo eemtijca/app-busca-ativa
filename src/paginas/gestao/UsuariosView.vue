@@ -307,6 +307,7 @@ onUnmounted(() => {
               <th scope="col">E-mail</th>
               <th scope="col">Papel</th>
               <th scope="col">Status</th>
+              <th scope="col">Acesso</th>
               <th scope="col" class="text-end">Ações</th>
             </tr>
           </thead>
@@ -323,6 +324,36 @@ onUnmounted(() => {
                 <span class="badge" :class="'text-bg-' + statusBadge(usuario.status)">
                   {{ usuario.status }}
                 </span>
+              </td>
+              <td>
+                <div class="d-flex gap-1">
+                  <i
+                    v-if="usuario.notificacoes_ativas"
+                    class="bi bi-bell-fill text-success"
+                    title="Notificações ativas"
+                    aria-hidden="true"
+                  ></i>
+                  <i
+                    v-else
+                    class="bi bi-bell-slash text-body-tertiary"
+                    title="Notificações inativas"
+                    aria-hidden="true"
+                  ></i>
+                  <span
+                    v-if="usuario.acesso_modulos.length"
+                    class="badge text-bg-light border small"
+                    :title="'Módulos: ' + usuario.acesso_modulos.join(', ')"
+                  >
+                    {{ usuario.acesso_modulos.length }} mód.
+                  </span>
+                  <span
+                    v-if="usuario.permissoes.length"
+                    class="badge text-bg-warning border small"
+                    :title="'Permissões: ' + usuario.permissoes.join(', ')"
+                  >
+                    {{ usuario.permissoes.length }} perm.
+                  </span>
+                </div>
               </td>
               <td class="text-end">
                 <div class="d-flex gap-1 justify-content-end">

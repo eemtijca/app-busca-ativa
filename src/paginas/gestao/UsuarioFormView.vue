@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { onMounted, ref, watch, nextTick } from 'vue';
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { useGestaoUsuarios } from '@/composables/useGestaoUsuarios';
 import { supabaseClient } from '@/servicos/supabase';
+import CampoFormulario from '@/componentes/CampoFormulario.vue';
+import GrupoCheckbox from '@/componentes/GrupoCheckbox.vue';
 import type {
   PapelPerfil,
   StatusPerfil,
@@ -24,19 +26,91 @@ const telefone = ref('');
 const cargo = ref('');
 const status = ref<StatusPerfil>('ativo');
 const notificacoesAtivas = ref(true);
+const acessoModulos = ref<string[]>(['frequencia']);
+const permissoes = ref<string[]>([]);
 
-// Atribuições (professor)
+const opcoesModulos = [
+  { valor: 'frequencia', rotulo: 'Frequência', icone: 'check2-square' },
+  { valor: 'ocorrencias', rotulo: 'Ocorrências', icone: 'exclamation-triangle' },
+  { valor: 'chat', rotulo: 'Chat', icone: 'chat-dots' },
+  { valor: 'relatorios', rotulo: 'Relatórios', icone: 'file-earmark-bar-graph' },
+  { valor: 'exportacao', rotulo: 'Exportação', icone: 'download' },
+];
+
+const opcoesPermissoes = [
+  { valor: 'exportar', rotulo: 'Exportar dados', icone: 'file-earmark-arrow-down' },
+  { valor: 'importar', rotulo: 'Importar planilhas', icone: 'file-earmark-arrow-up' },
+  { valor: 'gerenciar_usuarios', rotulo: 'Gerenciar usuários', icone: 'people' },
+];
+
 const atribuicoes = ref<(AtribuicaoProfessor & { turma_nome?: string })[]>([]);
-
-// Vínculos (responsável)
 const vinculos = ref<(VinculoResponsavel & { aluno_nome?: string })[]>([]);
 
 const salvando = ref(false);
+const formDirty = ref(false);
 const mensagemSucesso = ref<string | null>(null);
 const mensagemErro = ref<string | null>(null);
 const mensagemToast = ref<string | null>(null);
 const usuarioCriado = ref(false);
 const codigoCriado = ref<string | null>(null);
+
+let timeoutDraft: ReturnType<typeof setTimeout> | null = null;
+
+function chaveDraft() {
+  return modoEdicao.value && usuarioId.value
+    ? `draft-usuario-${usuarioId.value}`
+    : 'draft-usuario-novo';
+}
+
+function salvarDraft() {
+  if (usuarioCriado.value) return;
+  if (timeoutDraft) clearTimeout(timeoutDraft);
+  timeoutDraft = setTimeout(() => {
+    try {
+      sessionStorage.setItem(
+        chaveDraft(),
+        JSON.stringify({
+          nome: nome.value,
+          email: email.value,
+          papel: papel.value,
+          telefone: telefone.value,
+          cargo: cargo.value,
+          notificacoesAtivas: notificacoesAtivas.value,
+          acessoModulos: acessoModulos.value,
+          permissoes: permissoes.value,
+        }),
+      );
+    } catch {
+      /* storage cheio ou indisponível */
+    }
+  }, 500);
+}
+
+function limparDraft() {
+  try {
+    sessionStorage.removeItem(chaveDraft());
+    sessionStorage.removeItem('draft-usuario-novo');
+  } catch {
+    /* ignorar */
+  }
+}
+
+onBeforeRouteLeave((_to, _from, next) => {
+  if (formDirty.value && !salvando.value && !usuarioCriado.value) {
+    const confirmar = window.confirm('Há alterações não salvas. Deseja realmente sair?');
+    if (!confirmar) return next(false);
+  }
+  next();
+});
+
+watch(
+  [nome, email, telefone, cargo, notificacoesAtivas, acessoModulos, permissoes, papel],
+  () => {
+    if (!formDirty.value && !usuarioCriado.value) formDirty.value = true;
+    if (!usuarioCriado.value) salvarDraft();
+  },
+  { deep: true },
+);
 
 function mostrarErro(msg: string) {
   mensagemErro.value = msg;
@@ -79,11 +153,13 @@ onMounted(async () => {
     }
     const { data: perfil } = await supabaseClient
       .from('perfis')
-      .select('notificacoes_ativas')
+      .select('notificacoes_ativas, acesso_modulos, permissoes')
       .eq('id', id)
       .single();
     if (perfil) {
       notificacoesAtivas.value = perfil.notificacoes_ativas;
+      acessoModulos.value = perfil.acesso_modulos?.length ? perfil.acesso_modulos : ['frequencia'];
+      permissoes.value = perfil.permissoes ?? [];
     }
     if (usuario.papel === 'professor') {
       const { data: atribs } = await supabaseClient
@@ -113,9 +189,28 @@ onMounted(async () => {
       }
     }
   }
+
+  try {
+    const dadosSalvos = sessionStorage.getItem(chaveDraft());
+    if (dadosSalvos) {
+      const parsed = JSON.parse(dadosSalvos);
+      if (parsed.nome) nome.value = parsed.nome;
+      if (parsed.email) email.value = parsed.email;
+      if (parsed.papel) papel.value = parsed.papel;
+      if (parsed.telefone) telefone.value = parsed.telefone ?? '';
+      if (parsed.cargo) cargo.value = parsed.cargo ?? '';
+      if (typeof parsed.notificacoesAtivas === 'boolean')
+        notificacoesAtivas.value = parsed.notificacoesAtivas;
+      if (parsed.acessoModulos) acessoModulos.value = parsed.acessoModulos;
+      if (parsed.permissoes) permissoes.value = parsed.permissoes;
+    }
+  } catch {
+    /* ignorar dados corrompidos */
+  }
 });
 
 async function salvar() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   if (!nome.value.trim()) {
     mostrarErro('O campo nome é obrigatório.');
     return;
@@ -126,16 +221,29 @@ async function salvar() {
   }
   salvando.value = true;
   try {
+    const dadosExtras = {
+      notificacoes_ativas: notificacoesAtivas.value,
+      acesso_modulos: acessoModulos.value,
+      permissoes: permissoes.value,
+    };
     if (modoEdicao.value && usuarioId.value) {
       const ok = await atualizarUsuario(usuarioId.value, {
         nome: nome.value.trim(),
         telefone: telefone.value.trim() || undefined,
         cargo: cargo.value.trim() || undefined,
         status: status.value,
-        notificacoes_ativas: notificacoesAtivas.value,
-      } as Parameters<typeof atualizarUsuario>[1] & { notificacoes_ativas?: boolean });
+        ...dadosExtras,
+      } as Parameters<typeof atualizarUsuario>[1] & typeof dadosExtras);
       if (ok) {
-        router.push('/gestao/usuarios');
+        limparDraft();
+        mensagemSucesso.value = 'Alterações salvas com sucesso.';
+        await nextTick();
+        requestAnimationFrame(() => {
+          document
+            .querySelector('.alert-success')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        setTimeout(() => (mensagemSucesso.value = null), 4000);
       } else {
         mostrarErro(erro.value || 'Falha ao atualizar usuário.');
       }
@@ -148,9 +256,8 @@ async function salvar() {
         cargo: cargo.value.trim() || undefined,
       });
       if (id) {
-        if (!notificacoesAtivas.value) {
-          await supabaseClient.from('perfis').update({ notificacoes_ativas: false }).eq('id', id);
-        }
+        await supabaseClient.from('perfis').update(dadosExtras).eq('id', id);
+        limparDraft();
         usuarioCriado.value = true;
         codigoCriado.value = codigo;
         if (codigo) {
@@ -262,8 +369,7 @@ async function salvar() {
           <span class="fw-medium small">Dados do usuário</span>
         </div>
         <div class="card-body">
-          <div class="mb-3">
-            <label for="campoNome" class="form-label small fw-medium">Nome</label>
+          <CampoFormulario id="campoNome" label="Nome" :obrigatorio="true">
             <input
               id="campoNome"
               v-model="nome"
@@ -272,9 +378,9 @@ async function salvar() {
               required
               autocomplete="off"
             />
-          </div>
-          <div class="mb-3">
-            <label for="campoEmail" class="form-label small fw-medium">E-mail</label>
+          </CampoFormulario>
+
+          <CampoFormulario id="campoEmail" label="E-mail" :obrigatorio="true">
             <input
               id="campoEmail"
               v-model="email"
@@ -284,9 +390,9 @@ async function salvar() {
               required
               autocomplete="off"
             />
-          </div>
-          <div class="mb-3">
-            <label for="campoPapel" class="form-label small fw-medium">Papel</label>
+          </CampoFormulario>
+
+          <CampoFormulario id="campoPapel" label="Papel" :obrigatorio="true">
             <select
               id="campoPapel"
               v-model="papel"
@@ -296,9 +402,9 @@ async function salvar() {
               <option value="professor">Professor</option>
               <option value="responsavel">Responsável</option>
             </select>
-          </div>
-          <div class="mb-3">
-            <label for="campoTelefone" class="form-label small fw-medium">Telefone</label>
+          </CampoFormulario>
+
+          <CampoFormulario id="campoTelefone" label="Telefone">
             <input
               id="campoTelefone"
               v-model="telefone"
@@ -306,9 +412,9 @@ async function salvar() {
               class="form-control form-control-sm"
               autocomplete="off"
             />
-          </div>
-          <div v-if="papel === 'professor'" class="mb-3">
-            <label for="campoCargo" class="form-label small fw-medium">Cargo</label>
+          </CampoFormulario>
+
+          <CampoFormulario v-if="papel === 'professor'" id="campoCargo" label="Cargo">
             <input
               id="campoCargo"
               v-model="cargo"
@@ -316,7 +422,8 @@ async function salvar() {
               class="form-control form-control-sm"
               autocomplete="off"
             />
-          </div>
+          </CampoFormulario>
+
           <div class="mb-0">
             <div class="form-check">
               <input
@@ -330,6 +437,7 @@ async function salvar() {
               >
             </div>
           </div>
+
           <div v-if="modoEdicao" class="mt-3 mb-0">
             <label for="campoStatus" class="form-label small fw-medium">Status</label>
             <select id="campoStatus" v-model="status" class="form-select form-select-sm">
@@ -338,6 +446,48 @@ async function salvar() {
               <option value="inativo">Inativo</option>
             </select>
           </div>
+        </div>
+      </div>
+
+      <div v-if="papel === 'professor'" class="card border mb-3">
+        <div class="card-header bg-body-tertiary py-2">
+          <span class="fw-medium small">Módulos de acesso</span>
+        </div>
+        <div class="card-body">
+          <CampoFormulario
+            id="acessoModulos"
+            label="Módulos disponíveis para este professor"
+            dica="Marque quais módulos o usuário poderá acessar"
+          >
+            <GrupoCheckbox
+              nome="modulo"
+              :opcoes="opcoesModulos"
+              :modelo="acessoModulos"
+              :colunas="2"
+              @update:modelo="acessoModulos = $event"
+            />
+          </CampoFormulario>
+        </div>
+      </div>
+
+      <div v-if="papel === 'professor'" class="card border mb-3">
+        <div class="card-header bg-body-tertiary py-2">
+          <span class="fw-medium small">Permissões</span>
+        </div>
+        <div class="card-body">
+          <CampoFormulario
+            id="permissoes"
+            label="Permissões especiais"
+            dica="Conceda permissões adicionais a este professor"
+          >
+            <GrupoCheckbox
+              nome="permissao"
+              :opcoes="opcoesPermissoes"
+              :modelo="permissoes"
+              :colunas="2"
+              @update:modelo="permissoes = $event"
+            />
+          </CampoFormulario>
         </div>
       </div>
 

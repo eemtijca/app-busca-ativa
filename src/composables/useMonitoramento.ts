@@ -108,11 +108,13 @@ export function useMonitoramento() {
 
       const ausentesSet = new Set<string>();
       const periodosAluno = new Map<string, string[]>();
+      const observacoesAluno = new Map<string, string | null>();
+      const motivosAluno = new Map<string, string[]>();
 
       if (dataAula) {
         const { data: ausencias } = await supabaseClient
           .from('frequencias')
-          .select('aluno_id, periodo')
+          .select('aluno_id, periodo, observacao, motivos_ausencia')
           .in('aluno_id', alunoIds)
           .eq('data_aula', dataAula)
           .eq('tipo_registro', 'chamada_aula')
@@ -120,11 +122,20 @@ export function useMonitoramento() {
           .is('deleted_at', null);
 
         for (const a of ausencias ?? []) {
-          const id = (a as unknown as { aluno_id: string }).aluno_id;
-          const p = (a as unknown as { periodo: string }).periodo;
+          const reg = a as unknown as {
+            aluno_id: string;
+            periodo: string;
+            observacao: string | null;
+            motivos_ausencia: string[];
+          };
+          const id = reg.aluno_id;
           ausentesSet.add(id);
           if (!periodosAluno.has(id)) periodosAluno.set(id, []);
-          periodosAluno.get(id)!.push(p);
+          periodosAluno.get(id)!.push(reg.periodo);
+          observacoesAluno.set(id, reg.observacao);
+          if (reg.motivos_ausencia?.length) {
+            motivosAluno.set(id, reg.motivos_ausencia);
+          }
         }
       }
 
@@ -138,6 +149,8 @@ export function useMonitoramento() {
           turma_id: ent?.turma_id ?? null,
           ausente: ausentesSet.has(aluno.id),
           periodosAusentes: periodosAluno.get(aluno.id) ?? [],
+          observacao: observacoesAluno.get(aluno.id) ?? null,
+          motivosAusencia: motivosAluno.get(aluno.id) ?? [],
         };
       });
     } catch (e) {
@@ -154,7 +167,7 @@ export function useMonitoramento() {
     alunos: AlunoFrequencia[],
     professorId: string,
     dataAula: string,
-    periodo: string,
+    periodos: string[],
   ): Promise<{ registradas: number; erro: string | null }> {
     carregando.value = true;
     erro.value = null;
@@ -173,32 +186,37 @@ export function useMonitoramento() {
       if (!anoLetivo) throw new Error('Nenhum ano letivo ativo encontrado.');
       const anoLetivoId = (anoLetivo as unknown as { id: string }).id;
 
-      const insercoes = ausentes.map((aluno) => ({
-        aluno_id: aluno.id,
-        professor_id: professorId,
-        turma_id: aluno.turma_id,
-        ano_letivo_id: anoLetivoId,
-        data_aula: dataAula,
-        periodo,
-        tipo_registro: 'chamada_aula' as const,
-        status: 'ausente' as const,
-      }));
+      let totalRegistradas = 0;
 
-      const ausentesIds = ausentes.map((a) => a.id);
-      await supabaseClient
-        .from('frequencias')
-        .delete()
-        .in('aluno_id', ausentesIds)
-        .eq('data_aula', dataAula)
-        .eq('periodo', periodo)
-        .eq('tipo_registro', 'chamada_aula')
-        .is('deleted_at', null);
+      for (const periodo of periodos) {
+        const insercoes = ausentes.map((aluno) => ({
+          aluno_id: aluno.id,
+          professor_id: professorId,
+          turma_id: aluno.turma_id,
+          ano_letivo_id: anoLetivoId,
+          data_aula: dataAula,
+          periodo,
+          tipo_registro: 'chamada_aula' as const,
+          status: 'ausente' as const,
+        }));
 
-      const { error: err } = await supabaseClient.from('frequencias').insert(insercoes);
+        const ausentesIds = ausentes.map((a) => a.id);
+        await supabaseClient
+          .from('frequencias')
+          .delete()
+          .in('aluno_id', ausentesIds)
+          .eq('data_aula', dataAula)
+          .eq('periodo', periodo)
+          .eq('tipo_registro', 'chamada_aula')
+          .is('deleted_at', null);
 
-      if (err) throw err;
+        const { error: err } = await supabaseClient.from('frequencias').insert(insercoes);
 
-      return { registradas: ausentes.length, erro: null };
+        if (err) throw err;
+        totalRegistradas += ausentes.length;
+      }
+
+      return { registradas: totalRegistradas, erro: null };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error('[useMonitoramento] Erro ao registrar frequência:', msg);
@@ -215,6 +233,8 @@ export function useMonitoramento() {
     professorId: string,
     dataAula: string,
     periodo: string,
+    observacao?: string,
+    motivos?: string[],
   ): Promise<boolean> {
     carregando.value = true;
     erro.value = null;
@@ -248,6 +268,8 @@ export function useMonitoramento() {
         periodo,
         tipo_registro: 'chamada_aula',
         status: 'ausente',
+        observacao: observacao || null,
+        motivos_ausencia: motivos ?? [],
       });
 
       if (err) throw err;
@@ -266,8 +288,11 @@ export function useMonitoramento() {
     alunoId: string,
     professorId: string,
     descricao: string,
-    tipo: 'grave' | 'suspensao' = 'grave',
+    tipos: string[] = ['grave'],
     exigePresencaResponsavel = false,
+    tags?: string[],
+    notificarCoordenacao = true,
+    notificarResponsavel = false,
   ): Promise<boolean> {
     carregando.value = true;
     erro.value = null;
@@ -287,8 +312,11 @@ export function useMonitoramento() {
         ano_letivo_id: enturmacao.ano_letivo_id,
         titulo: descricao.slice(0, 100),
         descricao,
-        tipo,
+        tipo: tipos,
         exige_presenca_responsavel: exigePresencaResponsavel,
+        tags_comportamento: tags ?? [],
+        notificar_coordenacao: notificarCoordenacao,
+        notificar_responsavel: notificarResponsavel,
       });
 
       if (err) throw err;
@@ -409,6 +437,9 @@ export function useMonitoramento() {
           turma: null,
           descricao: oc.descricao,
           tipo: oc.tipo,
+          tags_comportamento: oc.tags_comportamento ?? [],
+          notificar_coordenacao: oc.notificar_coordenacao,
+          notificar_responsavel: oc.notificar_responsavel,
           data: formatarData(oc.created_at),
           professorNome: prof?.nome,
           exigePresencaResponsavel: oc.exige_presenca_responsavel,
@@ -705,11 +736,10 @@ export function useMonitoramento() {
           const { data: dataFormatada } = formatarDataHorario(oc.created_at);
           alertas.push({
             id: `oc-${oc.id}`,
-            tipo: oc.tipo === 'suspensao' ? 'suspensao' : 'comunicado',
-            titulo:
-              oc.tipo === 'suspensao'
-                ? `Suspensão — ${filho.nome}`
-                : `Ocorrência grave — ${filho.nome}`,
+            tipo: oc.tipo.includes('suspensao') ? 'suspensao' : 'comunicado',
+            titulo: oc.tipo.includes('suspensao')
+              ? `Suspensão — ${filho.nome}`
+              : `Ocorrência grave — ${filho.nome}`,
             descricao: oc.descricao,
             data: dataFormatada,
             urgente: oc.exige_presenca_responsavel,

@@ -11,13 +11,22 @@ const emit = defineEmits<{
   'registrar-suspensao': [ocorrenciaId: string];
 }>();
 
-const classeTipo: Record<OcorrenciaGrave['tipo'], string> = {
+const classeTipo: Record<string, string> = {
   grave: 'text-bg-danger',
   suspensao: 'text-bg-dark',
 };
-const rotuloTipo: Record<OcorrenciaGrave['tipo'], string> = {
+const rotuloTipo: Record<string, string> = {
   grave: 'Ocorrência grave',
   suspensao: 'Suspensão',
+};
+const rotuloTag: Record<string, string> = {
+  agressao_verbal: 'Agressão verbal',
+  agressao_fisica: 'Agressão física',
+  desacato: 'Desacato',
+  dano_patrimonio: 'Dano ao patrimônio',
+  bullying: 'Bullying',
+  descumprimento_regras: 'Descumprimento de regras',
+  saida_nao_autorizada: 'Saída não autorizada',
 };
 </script>
 
@@ -31,7 +40,13 @@ const rotuloTipo: Record<OcorrenciaGrave['tipo'], string> = {
     >
       <div class="d-flex w-100 justify-content-between gap-2 flex-wrap mb-2">
         <div class="d-flex align-items-center gap-2 flex-wrap">
-          <span class="badge" :class="classeTipo[oc.tipo]">{{ rotuloTipo[oc.tipo] }}</span>
+          <span
+            v-for="t in oc.tipo"
+            :key="t"
+            class="badge"
+            :class="classeTipo[t] || 'text-bg-secondary'"
+            >{{ rotuloTipo[t] || t }}</span
+          >
           <strong class="me-2">{{ oc.alunoNome }}</strong>
           <small class="text-body-secondary">
             <span v-if="oc.turma">{{ oc.turma }} · </span>Matrícula {{ oc.alunoMatricula }}
@@ -52,6 +67,23 @@ const rotuloTipo: Record<OcorrenciaGrave['tipo'], string> = {
         <span v-if="oc.exigePresencaResponsavel" class="badge text-bg-warning">
           <i class="bi bi-people me-1" aria-hidden="true"></i>Exige responsável
         </span>
+        <span v-for="tag in oc.tags_comportamento" :key="tag" class="badge text-bg-info">{{
+          rotuloTag[tag] || tag
+        }}</span>
+        <span
+          v-if="oc.notificar_coordenacao"
+          class="badge text-bg-light border"
+          title="Coordenação notificada"
+        >
+          <i class="bi bi-megaphone me-1" aria-hidden="true"></i>Coord.
+        </span>
+        <span
+          v-if="oc.notificar_responsavel"
+          class="badge text-bg-light border"
+          title="Responsável notificado"
+        >
+          <i class="bi bi-person-badge me-1" aria-hidden="true"></i>Resp.
+        </span>
       </div>
 
       <div class="d-flex flex-wrap gap-2 justify-content-end">
@@ -67,7 +99,7 @@ const rotuloTipo: Record<OcorrenciaGrave['tipo'], string> = {
         </button>
 
         <button
-          v-if="oc.tipo === 'grave'"
+          v-if="oc.tipo.includes('grave')"
           type="button"
           class="btn btn-sm btn-outline-dark"
           @click="emit('registrar-suspensao', oc.id)"

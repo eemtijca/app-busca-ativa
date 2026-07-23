@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import CampoFormulario from '@/componentes/CampoFormulario.vue';
 
 withDefaults(
   defineProps<{
@@ -26,6 +27,7 @@ const arquivo = ref<File | null>(null);
 const erroValidacao = ref<string | null>(null);
 
 const nomeArquivo = computed(() => (arquivo.value ? arquivo.value.name : ''));
+const contadorMotivo = computed(() => motivo.value.length);
 const tamanhoArquivo = computed(() => {
   if (!arquivo.value) return '';
   const kb = arquivo.value.size / 1024;
@@ -38,7 +40,6 @@ function aoSelecionarArquivo(event: Event) {
   if (alvo.files && alvo.files.length > 0) {
     const file = alvo.files[0];
     if (!file) return;
-    // Limite prático para pais com dados limitados: 5 MB
     if (file.size > 5 * 1024 * 1024) {
       erroValidacao.value = 'O arquivo é maior que 5 MB. Envie uma imagem menor.';
       arquivo.value = null;
@@ -96,30 +97,37 @@ function submeter() {
       <span>{{ erroValidacao }}</span>
     </div>
 
-    <div class="mb-3">
-      <label for="dataAusencia" class="form-label fw-medium small">Data da ausência</label>
+    <CampoFormulario id="dataAusencia" label="Data da ausência" :obrigatorio="true">
       <input
         id="dataAusencia"
         v-model="dataAusencia"
         type="date"
         class="form-control form-control-sm"
+        :class="{ 'is-invalid': erroValidacao && !dataAusencia }"
         :disabled="enviando"
         required
       />
-    </div>
+    </CampoFormulario>
 
-    <div class="mb-3">
-      <label for="motivo" class="form-label fw-medium small">Motivo da ausência</label>
+    <CampoFormulario
+      id="motivo"
+      label="Motivo da ausência"
+      :obrigatorio="true"
+      :maxlength="500"
+      :contador="contadorMotivo"
+    >
       <textarea
         id="motivo"
         v-model="motivo"
         class="form-control form-control-sm"
+        :class="{ 'is-invalid': erroValidacao && !motivo.trim() }"
         rows="3"
-        placeholder="Ex.: Ateste médico, consulta, falecimento na família..."
+        placeholder="Ex.: Atestado médico, consulta, falecimento na família..."
         :disabled="enviando"
+        maxlength="500"
         required
       ></textarea>
-    </div>
+    </CampoFormulario>
 
     <div class="mb-3">
       <label class="form-label fw-medium small">Anexar atestado ou comprovante</label>

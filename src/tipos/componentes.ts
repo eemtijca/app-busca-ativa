@@ -128,16 +128,10 @@ export interface AlunoFrequencia {
   matricula: string;
   turma: string | null;
   turma_id: string | null;
-  /**
-   * true = ausente (marcado pelo professor).
-   * false = presente (padrão assumido pelo sistema).
-   */
   ausente: boolean;
-  /**
-   * Lista de períodos em que o aluno esteve na escola mas
-   * se ausentou de uma aula específica.
-   */
   periodosAusentes?: string[];
+  observacao?: string | null;
+  motivosAusencia?: string[];
 }
 
 /**
@@ -167,7 +161,10 @@ export interface OcorrenciaGrave {
   alunoMatricula: string;
   turma: string | null;
   descricao: string;
-  tipo: 'grave' | 'suspensao';
+  tipo: string[];
+  tags_comportamento: string[];
+  notificar_coordenacao: boolean;
+  notificar_responsavel: boolean;
   data: string;
   professorNome?: string;
   anexoUrl?: string | null;
@@ -262,6 +259,9 @@ export interface UsuarioItem {
   telefone: string | null;
   cargo: string | null;
   ultimo_acesso: string | null;
+  notificacoes_ativas: boolean;
+  acesso_modulos: string[];
+  permissoes: string[];
 }
 
 /**
@@ -274,6 +274,13 @@ export interface AlunoItem {
   turma: string | null;
   status: StatusAluno;
   data_nascimento: string | null;
+  codigo_inep: string | null;
+  data_matricula: string | null;
+  observacoes: string | null;
+  transporte_escolar: boolean;
+  alimentacao_diferenciada: boolean;
+  necessidades_especiais: boolean;
+  documentos_recebidos: string[];
 }
 
 /**
@@ -313,6 +320,16 @@ export interface DadosCriacaoUsuario {
   papel: PapelPerfil;
   telefone?: string;
   cargo?: string;
+}
+
+/**
+ * Opcao para GrupoCheckbox.
+ */
+export interface OpcaoCheckbox {
+  valor: string;
+  rotulo: string;
+  icone?: string;
+  desabilitado?: boolean;
 }
 
 /**
