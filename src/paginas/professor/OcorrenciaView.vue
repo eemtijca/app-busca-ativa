@@ -94,7 +94,9 @@ async function confirmar() {
     exigePresenca.value = false;
     await nextTick();
     requestAnimationFrame(() => {
-      document.querySelector('.alert-success')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document
+        .querySelector('.alert-success')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     setTimeout(() => (mensagemSucesso.value = null), 4000);
   } else {

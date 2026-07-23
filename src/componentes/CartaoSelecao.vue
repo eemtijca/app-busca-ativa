@@ -20,11 +20,7 @@ const emit = defineEmits<{
   <button
     type="button"
     class="btn btn-sm w-100 text-start d-flex align-items-center gap-2 border"
-    :class="[
-      selecionado
-        ? `btn-${variante} border-${variante}`
-        : 'btn-outline-secondary bg-body',
-    ]"
+    :class="[selecionado ? `btn-${variante} border-${variante}` : 'btn-outline-secondary bg-body']"
     :disabled="desabilitado"
     :aria-pressed="selecionado"
     @click="emit('click')"

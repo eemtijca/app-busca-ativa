@@ -45,7 +45,8 @@ const rotuloTag: Record<string, string> = {
             :key="t"
             class="badge"
             :class="classeTipo[t] || 'text-bg-secondary'"
-          >{{ rotuloTipo[t] || t }}</span>
+            >{{ rotuloTipo[t] || t }}</span
+          >
           <strong class="me-2">{{ oc.alunoNome }}</strong>
           <small class="text-body-secondary">
             <span v-if="oc.turma">{{ oc.turma }} · </span>Matrícula {{ oc.alunoMatricula }}
@@ -66,15 +67,21 @@ const rotuloTag: Record<string, string> = {
         <span v-if="oc.exigePresencaResponsavel" class="badge text-bg-warning">
           <i class="bi bi-people me-1" aria-hidden="true"></i>Exige responsável
         </span>
+        <span v-for="tag in oc.tags_comportamento" :key="tag" class="badge text-bg-info">{{
+          rotuloTag[tag] || tag
+        }}</span>
         <span
-          v-for="tag in oc.tags_comportamento"
-          :key="tag"
-          class="badge text-bg-info"
-        >{{ rotuloTag[tag] || tag }}</span>
-        <span v-if="oc.notificar_coordenacao" class="badge text-bg-light border" title="Coordenação notificada">
+          v-if="oc.notificar_coordenacao"
+          class="badge text-bg-light border"
+          title="Coordenação notificada"
+        >
           <i class="bi bi-megaphone me-1" aria-hidden="true"></i>Coord.
         </span>
-        <span v-if="oc.notificar_responsavel" class="badge text-bg-light border" title="Responsável notificado">
+        <span
+          v-if="oc.notificar_responsavel"
+          class="badge text-bg-light border"
+          title="Responsável notificado"
+        >
           <i class="bi bi-person-badge me-1" aria-hidden="true"></i>Resp.
         </span>
       </div>

@@ -49,8 +49,18 @@ onBeforeRouteLeave((_to, _from, next) => {
 });
 
 watch(
-  [formProfessorId, formTurmaId, formDisciplinaId, formPapel, formDataInicio, formDataFim, formAtivo],
-  () => { if (!formDirty.value && modalAberto.value) formDirty.value = true; },
+  [
+    formProfessorId,
+    formTurmaId,
+    formDisciplinaId,
+    formPapel,
+    formDataInicio,
+    formDataFim,
+    formAtivo,
+  ],
+  () => {
+    if (!formDirty.value && modalAberto.value) formDirty.value = true;
+  },
 );
 
 function mostrarSucesso(msg: string) {

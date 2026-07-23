@@ -40,11 +40,7 @@ function alternar(valor: string) {
 
 <template>
   <div class="row g-2">
-    <div
-      v-for="opcao in opcoes"
-      :key="opcao.valor"
-      :class="classeColuna"
-    >
+    <div v-for="opcao in opcoes" :key="opcao.valor" :class="classeColuna">
       <div class="form-check">
         <input
           :id="`${nome || 'cb'}-${opcao.valor}`"

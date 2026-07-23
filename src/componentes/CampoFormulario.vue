@@ -26,12 +26,7 @@ withDefaults(
       <span v-if="obrigatorio" class="text-danger ms-1" aria-hidden="true">*</span>
     </label>
     <slot />
-    <div
-      v-if="erro"
-      :id="`${id}-erro`"
-      class="invalid-feedback d-block small mt-1"
-      role="alert"
-    >
+    <div v-if="erro" :id="`${id}-erro`" class="invalid-feedback d-block small mt-1" role="alert">
       <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>
       {{ erro }}
     </div>

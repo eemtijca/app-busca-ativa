@@ -72,9 +72,7 @@ const contadorObservacoes = computed(() => observacoes.value.length);
 let timeoutDraft: ReturnType<typeof setTimeout> | null = null;
 
 function chaveDraft() {
-  return modoEdicao.value && alunoId.value
-    ? `draft-aluno-${alunoId.value}`
-    : 'draft-aluno-novo';
+  return modoEdicao.value && alunoId.value ? `draft-aluno-${alunoId.value}` : 'draft-aluno-novo';
 }
 
 function salvarDraft() {
@@ -97,7 +95,9 @@ function salvarDraft() {
           turmaId: turmaId.value,
         }),
       );
-    } catch { /* ignorar */ }
+    } catch {
+      /* ignorar */
+    }
   }, 500);
 }
 
@@ -105,7 +105,9 @@ function limparDraft() {
   try {
     sessionStorage.removeItem(chaveDraft());
     sessionStorage.removeItem('draft-aluno-novo');
-  } catch { /* ignorar */ }
+  } catch {
+    /* ignorar */
+  }
 }
 
 onBeforeRouteLeave((_to, _from, next) => {
@@ -117,7 +119,16 @@ onBeforeRouteLeave((_to, _from, next) => {
 });
 
 watch(
-  [nome, matricula, codigoInep, observacoes, documentosRecebidos, transporteEscolar, alimentacaoDiferenciada, necessidadesEspeciais],
+  [
+    nome,
+    matricula,
+    codigoInep,
+    observacoes,
+    documentosRecebidos,
+    transporteEscolar,
+    alimentacaoDiferenciada,
+    necessidadesEspeciais,
+  ],
   () => {
     if (!formDirty.value) formDirty.value = true;
     salvarDraft();
@@ -309,7 +320,9 @@ onMounted(async () => {
     }
     const { data: alunoFull } = await supabaseClient
       .from('alunos')
-      .select('codigo_inep, data_matricula, transporte_escolar, alimentacao_diferenciada, necessidades_especiais, documentos_recebidos')
+      .select(
+        'codigo_inep, data_matricula, transporte_escolar, alimentacao_diferenciada, necessidades_especiais, documentos_recebidos',
+      )
       .eq('id', id)
       .single();
     if (alunoFull) {
@@ -335,13 +348,18 @@ onMounted(async () => {
       if (parsed.dataNascimento) dataNascimento.value = parsed.dataNascimento;
       if (parsed.dataMatricula) dataMatricula.value = parsed.dataMatricula;
       if (parsed.observacoes) observacoes.value = parsed.observacoes;
-      if (typeof parsed.transporteEscolar === 'boolean') transporteEscolar.value = parsed.transporteEscolar;
-      if (typeof parsed.alimentacaoDiferenciada === 'boolean') alimentacaoDiferenciada.value = parsed.alimentacaoDiferenciada;
-      if (typeof parsed.necessidadesEspeciais === 'boolean') necessidadesEspeciais.value = parsed.necessidadesEspeciais;
+      if (typeof parsed.transporteEscolar === 'boolean')
+        transporteEscolar.value = parsed.transporteEscolar;
+      if (typeof parsed.alimentacaoDiferenciada === 'boolean')
+        alimentacaoDiferenciada.value = parsed.alimentacaoDiferenciada;
+      if (typeof parsed.necessidadesEspeciais === 'boolean')
+        necessidadesEspeciais.value = parsed.necessidadesEspeciais;
       if (parsed.documentosRecebidos) documentosRecebidos.value = parsed.documentosRecebidos;
       if (parsed.turmaId) turmaId.value = parsed.turmaId;
     }
-  } catch { /* ignorar dados corrompidos */ }
+  } catch {
+    /* ignorar dados corrompidos */
+  }
 });
 
 async function salvar() {
@@ -379,7 +397,9 @@ async function salvar() {
         mensagemSucesso.value = 'Alterações salvas com sucesso.';
         await nextTick();
         requestAnimationFrame(() => {
-          document.querySelector('.alert-success')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          document
+            .querySelector('.alert-success')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
         setTimeout(() => (mensagemSucesso.value = null), 4000);
       } else {
@@ -417,7 +437,9 @@ async function salvar() {
         mensagemSucesso.value = `${modo} com sucesso!`;
         await nextTick();
         requestAnimationFrame(() => {
-          document.querySelector('.alert-success')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          document
+            .querySelector('.alert-success')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
         setTimeout(() => (mensagemSucesso.value = null), 4000);
       } else {

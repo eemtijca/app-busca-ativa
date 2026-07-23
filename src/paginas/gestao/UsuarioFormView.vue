@@ -80,7 +80,9 @@ function salvarDraft() {
           permissoes: permissoes.value,
         }),
       );
-    } catch { /* storage cheio ou indisponível */ }
+    } catch {
+      /* storage cheio ou indisponível */
+    }
   }, 500);
 }
 
@@ -88,7 +90,9 @@ function limparDraft() {
   try {
     sessionStorage.removeItem(chaveDraft());
     sessionStorage.removeItem('draft-usuario-novo');
-  } catch { /* ignorar */ }
+  } catch {
+    /* ignorar */
+  }
 }
 
 onBeforeRouteLeave((_to, _from, next) => {
@@ -195,11 +199,14 @@ onMounted(async () => {
       if (parsed.papel) papel.value = parsed.papel;
       if (parsed.telefone) telefone.value = parsed.telefone ?? '';
       if (parsed.cargo) cargo.value = parsed.cargo ?? '';
-      if (typeof parsed.notificacoesAtivas === 'boolean') notificacoesAtivas.value = parsed.notificacoesAtivas;
+      if (typeof parsed.notificacoesAtivas === 'boolean')
+        notificacoesAtivas.value = parsed.notificacoesAtivas;
       if (parsed.acessoModulos) acessoModulos.value = parsed.acessoModulos;
       if (parsed.permissoes) permissoes.value = parsed.permissoes;
     }
-  } catch { /* ignorar dados corrompidos */ }
+  } catch {
+    /* ignorar dados corrompidos */
+  }
 });
 
 async function salvar() {
@@ -232,7 +239,9 @@ async function salvar() {
         mensagemSucesso.value = 'Alterações salvas com sucesso.';
         await nextTick();
         requestAnimationFrame(() => {
-          document.querySelector('.alert-success')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          document
+            .querySelector('.alert-success')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
         setTimeout(() => (mensagemSucesso.value = null), 4000);
       } else {

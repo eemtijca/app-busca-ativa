@@ -122,7 +122,12 @@ export function useMonitoramento() {
           .is('deleted_at', null);
 
         for (const a of ausencias ?? []) {
-          const reg = a as unknown as { aluno_id: string; periodo: string; observacao: string | null; motivos_ausencia: string[] };
+          const reg = a as unknown as {
+            aluno_id: string;
+            periodo: string;
+            observacao: string | null;
+            motivos_ausencia: string[];
+          };
           const id = reg.aluno_id;
           ausentesSet.add(id);
           if (!periodosAluno.has(id)) periodosAluno.set(id, []);
@@ -732,10 +737,9 @@ export function useMonitoramento() {
           alertas.push({
             id: `oc-${oc.id}`,
             tipo: oc.tipo.includes('suspensao') ? 'suspensao' : 'comunicado',
-            titulo:
-              oc.tipo.includes('suspensao')
-                ? `Suspensão — ${filho.nome}`
-                : `Ocorrência grave — ${filho.nome}`,
+            titulo: oc.tipo.includes('suspensao')
+              ? `Suspensão — ${filho.nome}`
+              : `Ocorrência grave — ${filho.nome}`,
             descricao: oc.descricao,
             data: dataFormatada,
             urgente: oc.exige_presenca_responsavel,

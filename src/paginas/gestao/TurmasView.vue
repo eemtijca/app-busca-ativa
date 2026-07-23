@@ -30,10 +30,9 @@ onBeforeRouteLeave((_to, _from, next) => {
   next();
 });
 
-watch(
-  [formSerie, formLetra, formCapacidade, formAtivo],
-  () => { if (!formDirty.value && modalAberto.value) formDirty.value = true; },
-);
+watch([formSerie, formLetra, formCapacidade, formAtivo], () => {
+  if (!formDirty.value && modalAberto.value) formDirty.value = true;
+});
 
 function mostrarSucesso(msg: string) {
   mensagemSucesso.value = msg;
