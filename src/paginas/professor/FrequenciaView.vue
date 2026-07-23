@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
 import { useMonitoramento } from '@/composables/useMonitoramento';
@@ -62,7 +62,6 @@ function alternarAusencia(alunoId: string) {
 }
 
 async function salvarFrequencia() {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
   if (!usuario.value || salvando.value) return;
   salvando.value = true;
   const { registradas, erro: errMsg } = await registrarFrequenciaEmMassa(
@@ -81,6 +80,11 @@ async function salvarFrequencia() {
   } else {
     mensagemSucesso.value = 'Todos os alunos estão presentes. Nenhuma ausência registrada.';
   }
+  await nextTick();
+  requestAnimationFrame(() => {
+    const alerta = document.querySelector('.alert-success');
+    if (alerta) alerta.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
   setTimeout(() => (mensagemSucesso.value = null), 4000);
 }
 

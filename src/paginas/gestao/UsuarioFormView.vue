@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, nextTick } from 'vue';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { useGestaoUsuarios } from '@/composables/useGestaoUsuarios';
 import { supabaseClient } from '@/servicos/supabase';
@@ -229,7 +229,12 @@ async function salvar() {
       } as Parameters<typeof atualizarUsuario>[1] & typeof dadosExtras);
       if (ok) {
         limparDraft();
-        router.push('/gestao/usuarios');
+        mensagemSucesso.value = 'Alterações salvas com sucesso.';
+        await nextTick();
+        requestAnimationFrame(() => {
+          document.querySelector('.alert-success')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        setTimeout(() => (mensagemSucesso.value = null), 4000);
       } else {
         mostrarErro(erro.value || 'Falha ao atualizar usuário.');
       }

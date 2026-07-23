@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
 import { useMonitoramento } from '@/composables/useMonitoramento';
@@ -20,6 +20,7 @@ const descricao = ref('');
 const exigePresenca = ref(false);
 const notificarCoordenacao = ref(true);
 const notificarResponsavel = ref(false);
+const mensagemSucesso = ref<string | null>(null);
 const mensagemErro = ref<string | null>(null);
 
 const opcoesTipo = [
@@ -84,7 +85,18 @@ async function confirmar() {
     notificarResponsavel.value,
   );
   if (ok) {
-    router.back();
+    mensagemSucesso.value = 'Ocorrência registrada com sucesso!';
+    alunoId.value = '';
+    descricao.value = '';
+    tags.value = [];
+    notificarCoordenacao.value = true;
+    notificarResponsavel.value = false;
+    exigePresenca.value = false;
+    await nextTick();
+    requestAnimationFrame(() => {
+      document.querySelector('.alert-success')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    setTimeout(() => (mensagemSucesso.value = null), 4000);
   } else {
     mensagemErro.value = 'Falha ao registrar ocorrência. Tente novamente.';
   }
@@ -120,6 +132,10 @@ onMounted(async () => {
       >
     </div>
 
+    <div v-if="mensagemSucesso" class="alert alert-success py-2 small mb-3" role="status">
+      <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
+      {{ mensagemSucesso }}
+    </div>
     <div v-if="mensagemErro" class="alert alert-danger py-2 small mb-3" role="alert">
       <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
       {{ mensagemErro }}

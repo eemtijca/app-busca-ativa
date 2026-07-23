@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch, nextTick } from 'vue';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { useGestaoUsuarios } from '@/composables/useGestaoUsuarios';
 import { supabaseClient } from '@/servicos/supabase';
@@ -47,6 +47,7 @@ const tipoVinculo = ref('outro');
 
 const formDirty = ref(false);
 const salvando = ref(false);
+const mensagemSucesso = ref<string | null>(null);
 const mensagemErro = ref<string | null>(null);
 
 const enturmacaoAtual = ref<Enturmacao | null>(null);
@@ -375,7 +376,12 @@ async function salvar() {
       } as Parameters<typeof atualizarAluno>[1] & typeof dadosExtras);
       if (ok) {
         limparDraft();
-        router.push('/gestao/alunos');
+        mensagemSucesso.value = 'Alterações salvas com sucesso.';
+        await nextTick();
+        requestAnimationFrame(() => {
+          document.querySelector('.alert-success')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        setTimeout(() => (mensagemSucesso.value = null), 4000);
       } else {
         mostrarErro(erro.value || 'Falha ao atualizar aluno.');
       }
@@ -407,7 +413,13 @@ async function salvar() {
           await supabaseClient.from('alunos').update(updates).eq('id', id);
         }
         limparDraft();
-        router.push('/gestao/alunos');
+        const modo = modoEdicao.value ? 'Editado' : 'Criado';
+        mensagemSucesso.value = `${modo} com sucesso!`;
+        await nextTick();
+        requestAnimationFrame(() => {
+          document.querySelector('.alert-success')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        setTimeout(() => (mensagemSucesso.value = null), 4000);
       } else {
         mostrarErro(erro.value || 'Falha ao criar aluno.');
       }
@@ -437,6 +449,10 @@ async function salvar() {
       {{ modoEdicao ? 'Editar aluno' : 'Novo aluno' }}
     </h1>
 
+    <div v-if="mensagemSucesso" class="alert alert-success py-2 small mb-3" role="status">
+      <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
+      {{ mensagemSucesso }}
+    </div>
     <div v-if="mensagemErro" class="alert alert-danger py-2 small mb-3" role="alert">
       <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
       {{ mensagemErro }}

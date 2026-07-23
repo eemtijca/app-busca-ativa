@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAutenticacao } from '@/composables/useAutenticacao';
 import { useMonitoramento } from '@/composables/useMonitoramento';
@@ -15,6 +15,7 @@ const alunos = ref<AlunoFrequencia[]>([]);
 const alunoId = ref('');
 const periodos = ref<string[]>([]);
 const justificativa = ref('');
+const mensagemSucesso = ref<string | null>(null);
 const mensagemErro = ref<string | null>(null);
 
 const opcoesPeriodos = [
@@ -75,7 +76,17 @@ async function confirmar() {
       return;
     }
   }
-  router.back();
+  const total = periodos.value.length;
+  mensagemSucesso.value = `${total} ausência(s) registrada(s) com sucesso.`;
+  alunoId.value = '';
+  periodos.value = [];
+  motivos.value = [];
+  justificativa.value = '';
+  await nextTick();
+  requestAnimationFrame(() => {
+    document.querySelector('.alert-success')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  setTimeout(() => (mensagemSucesso.value = null), 4000);
 }
 
 onMounted(async () => {
@@ -105,6 +116,10 @@ onMounted(async () => {
       Use quando o aluno esteve na escola mas se ausentou de um período específico.
     </p>
 
+    <div v-if="mensagemSucesso" class="alert alert-success py-2 small mb-3" role="status">
+      <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
+      {{ mensagemSucesso }}
+    </div>
     <div v-if="mensagemErro" class="alert alert-danger py-2 small mb-3" role="alert">
       <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
       {{ mensagemErro }}
