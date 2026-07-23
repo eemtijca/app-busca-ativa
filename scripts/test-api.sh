@@ -10,6 +10,11 @@ set -o pipefail
 
 SUPABASE_URL="${VITE_SUPABASE_URL:-http://127.0.0.1:54321}"
 ANON_KEY="${VITE_SUPABASE_PUBLISHABLE_KEY:-}"
+
+SENHA_ADMIN="${SEED_SENHA_ADMIN:-Admin123!}"
+SENHA_PROF="${SEED_SENHA_PROF:-Prof123!}"
+SENHA_RESP="${SEED_SENHA_RESP:-Resp123!}"
+
 PASS=0; FAIL=0; ERROS=""
 UNIQ=$(date +%s)_$$
 
@@ -76,21 +81,21 @@ restore_pw() {
     "UPDATE auth.users SET encrypted_password = crypt('$pw', gen_salt('bf')) WHERE id = '$uid';" \
     2>/dev/null || true
 }
-restore_pw "a0000000-0000-0000-0000-000000000002" "Prof123!"
-restore_pw "a0000000-0000-0000-0000-000000000003" "Prof123!"
-restore_pw "a0000000-0000-0000-0000-000000000005" "Resp123!"
+restore_pw "a0000000-0000-0000-0000-000000000002" "$SENHA_PROF"
+restore_pw "a0000000-0000-0000-0000-000000000003" "$SENHA_PROF"
+restore_pw "a0000000-0000-0000-0000-000000000005" "$SENHA_RESP"
 
 echo ""; echo "=== 1. AUTENTICACAO ==="
 
-HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"gestao@escola.edu.br","password":"Admin123!"}')
+HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"gestao@escola.edu.br","password":"'"$SENHA_ADMIN"'"}')
 assert "Login gestao HTTP 200" "200" "$HTTP"
 TG=$(api_body | py "d=json.load(sys.stdin); print(d.get('access_token',''))")
 
-HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"Prof123!"}')
+HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"'"$SENHA_PROF"'"}')
 assert "Login professor HTTP 200" "200" "$HTTP"
 TP=$(api_body | py "d=json.load(sys.stdin); print(d.get('access_token',''))")
 
-HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"resp1@email.com","password":"Resp123!"}')
+HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"resp1@email.com","password":"'"$SENHA_RESP"'"}')
 assert "Login responsavel HTTP 200" "200" "$HTTP"
 TR=$(api_body | py "d=json.load(sys.stdin); print(d.get('access_token',''))")
 
@@ -115,7 +120,7 @@ HTTP=$(api_code POST "/auth/v1/logout" '' "$TG")
 assert "Logout 204" "204" "$HTTP"
 
 # Re-login
-HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"gestao@escola.edu.br","password":"Admin123!"}')
+HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"gestao@escola.edu.br","password":"'"$SENHA_ADMIN"'"}')
 TG=$(api_body | py "d=json.load(sys.stdin); print(d.get('access_token',''))")
 
 echo ""; echo "=== 2. EDGE FUNCTIONS ==="
@@ -215,7 +220,7 @@ HTTP=$(api_code POST "/rest/v1/rpc/fn_gerar_codigo_redefinicao" '{"p_perfil_id":
 assert "gerar codigo perfil invalido 400" "400" "$HTTP"
 
 # Re-obter token do professor (pode ter expirado por mudanca de senha em execucoes anteriores)
-HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"Prof123!"}')
+HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"'"$SENHA_PROF"'"}')
 TP=$(api_body | py "d=json.load(sys.stdin); print(d.get('access_token',''))")
 # Se TP estiver vazio, tenta senha alterada pelo teste anterior
 if [ -z "$TP" ]; then
@@ -566,7 +571,7 @@ TEM_REVOGADO=$(api_body | py "d=json.load(sys.stdin); print(d[0].get('revogado_e
 assert "7.12 revogado_em visivel" "True" "$TEM_REVOGADO"
 
 # Refresh professor token for 7.13-7.15
-HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"Prof123!"}')
+HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"'"$SENHA_PROF"'"}')
 TP=$(api_body | py "d=json.load(sys.stdin); print(d.get('access_token',''))")
 if [ -z "$TP" ]; then
   HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"NovaSenha456!"}')
@@ -614,7 +619,7 @@ assert_contains "8.4 notificar_coordenacao false" "$OCO_NTF" "false"
 echo ""; echo "=== 9. NOVOS CAMPOS — FREQUENCIAS ==="
 
 # Garantir token valido do professor
-HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"Prof123!"}')
+HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"'"$SENHA_PROF"'"}')
 TP=$(api_body | py "d=json.load(sys.stdin); print(d.get('access_token',''))")
 if [ -z "$TP" ]; then
   HTTP=$(api_code POST "/auth/v1/token?grant_type=password" '{"email":"prof1@escola.edu.br","password":"NovaSenha456!"}')
@@ -691,7 +696,7 @@ echo "  FIM SECAO 7 — TODOS OS FLUXOS VERIFICADOS"
 echo "=========================================="
 
 # Restore prof1 password (changed by redefinir-senha-codigo test)
-restore_pw "a0000000-0000-0000-0000-000000000002" "Prof123!"
+restore_pw "a0000000-0000-0000-0000-000000000002" "$SENHA_PROF"
 
 echo ""; echo "=========================================="
 echo "  TOTAL: $((PASS+FAIL))  |  PASS: $PASS  |  FAIL: $FAIL"

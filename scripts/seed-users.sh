@@ -10,14 +10,18 @@
 API_URL="${VITE_SUPABASE_URL:-http://127.0.0.1:54321}"
 SERVICE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-}"
 
+SENHA_ADMIN="${SEED_SENHA_ADMIN:-Admin123!}"
+SENHA_PROF="${SEED_SENHA_PROF:-Prof123!}"
+SENHA_RESP="${SEED_SENHA_RESP:-Resp123!}"
+
 declare -a USERS=(
-  '{"email":"gestao@escola.edu.br","password":"Admin123!","email_confirm":true,"user_metadata":{"nome":"Carlos Administrador","papel":"gestao"}}'
-  '{"email":"prof1@escola.edu.br","password":"Prof123!","email_confirm":true,"user_metadata":{"nome":"Ana Professora","papel":"professor"}}'
-  '{"email":"prof2@escola.edu.br","password":"Prof123!","email_confirm":true,"user_metadata":{"nome":"Bruno Professor","papel":"professor"}}'
-  '{"email":"prof3@escola.edu.br","password":"Prof123!","email_confirm":true,"user_metadata":{"nome":"Carla Docente","papel":"professor"}}'
-  '{"email":"resp1@email.com","password":"Resp123!","email_confirm":true,"user_metadata":{"nome":"Maria Silva","papel":"responsavel"}}'
-  '{"email":"resp2@email.com","password":"Resp123!","email_confirm":true,"user_metadata":{"nome":"Joao Santos","papel":"responsavel"}}'
-  '{"email":"resp3@email.com","password":"Resp123!","email_confirm":true,"user_metadata":{"nome":"Lucia Oliveira","papel":"responsavel"}}'
+  '{"email":"gestao@escola.edu.br","password":"'"$SENHA_ADMIN"'","email_confirm":true,"user_metadata":{"nome":"Carlos Administrador","papel":"gestao"}}'
+  '{"email":"prof1@escola.edu.br","password":"'"$SENHA_PROF"'","email_confirm":true,"user_metadata":{"nome":"Ana Professora","papel":"professor"}}'
+  '{"email":"prof2@escola.edu.br","password":"'"$SENHA_PROF"'","email_confirm":true,"user_metadata":{"nome":"Bruno Professor","papel":"professor"}}'
+  '{"email":"prof3@escola.edu.br","password":"'"$SENHA_PROF"'","email_confirm":true,"user_metadata":{"nome":"Carla Docente","papel":"professor"}}'
+  '{"email":"resp1@email.com","password":"'"$SENHA_RESP"'","email_confirm":true,"user_metadata":{"nome":"Maria Silva","papel":"responsavel"}}'
+  '{"email":"resp2@email.com","password":"'"$SENHA_RESP"'","email_confirm":true,"user_metadata":{"nome":"Joao Santos","papel":"responsavel"}}'
+  '{"email":"resp3@email.com","password":"'"$SENHA_RESP"'","email_confirm":true,"user_metadata":{"nome":"Lucia Oliveira","papel":"responsavel"}}'
 )
 
 for user in "${USERS[@]}"; do
